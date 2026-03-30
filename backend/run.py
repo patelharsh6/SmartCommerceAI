@@ -1,9 +1,4 @@
-from app import create_app
+import uvicorn
 
-# Factory initialization 
-app = create_app()
-
-
-if __name__ == '__main__':
-    # Run the Flask app
-    app.run(debug=True, port=5000)
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
