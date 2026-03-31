@@ -333,7 +333,7 @@ Ensures AI-driven decisions remain **safe, stable, and profitable**.
 ---
 
 ## 🚀 Project Structure
-
+```
 SmartCommerceAI/
 │
 ├── backend/
@@ -369,6 +369,7 @@ SmartCommerceAI/
 │   └── package.json                      # Node dependencies
 │
 └── README.md
+```
 ---
 
 ## 🚀 9. HOW TO RUN
@@ -388,4 +389,5 @@ npm run dev
 ```
 
 ---
+
 
