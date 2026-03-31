@@ -114,7 +114,7 @@ Balance competitive discounting with automated **price floors** to ensure sustai
 
 ---
 
-## 4. 🏗️ Tech Stack
+## 🏗️ 4. Tech Stack
 
 <div align="center">
 
@@ -215,7 +215,7 @@ flowchart LR
 
 ---
 
-## 🤖 AI Model Details
+## 🤖 8. AI Model Details
 
 The engine operates on a **multi-model architecture**, combining:
 - 🔍 Unsupervised pattern recognition  
@@ -330,7 +330,45 @@ Ensures AI-driven decisions remain **safe, stable, and profitable**.
 - 💰 Revenue optimization with safety constraints  
 - ⚡ Real-time adaptive decision-making  
 
+---
 
+## 🚀 Project Structure
+
+SmartCommerceAI/
+│
+├── backend/
+│   ├── app/
+│   │   ├── routes/
+│   │   │   └── recommendation_routes.py     # API endpoints (pricing & recommendations)
+│   │   ├── services/
+│   │   │   └── recommendation_service.py    # Core ML logic & calculations
+│   │   └── __init__.py
+│   │
+│   ├── data/
+│   │   ├── Dataset.csv                     # Raw interaction logs
+│   │   ├── model.pkl                       # Trained pricing model
+│   │   ├── recommendation_model.pkl        # Association rules model
+│   │   └── product_meta.csv                # Product metadata for API
+│   │
+│   ├── dynamic_pricing_model.py            # Pricing model training
+│   ├── cat_recommend_model.py              # Category model (Polynomial Degree 2)
+│   ├── prod_recommend_model.py             # Recommendation model training
+│   ├── requirements.txt                    # Python dependencies
+│   └── run.py                             # Flask app entry point
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── api.js                         # API integration
+│   │   ├── App.jsx                        # Main app logic
+│   │   ├── App.css
+│   │   └── main.jsx
+│   │
+│   ├── index.html
+│   └── package.json                      # Node dependencies
+│
+└── README.md
 ---
 
 ## 🚀 9. HOW TO RUN
