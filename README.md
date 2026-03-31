@@ -1,24 +1,105 @@
+# 🏆 Hackathon Project
+
+## 🎯 Tic Tech Toe '26  
+**Dhirubhai Ambani Institute of Information and Communication Technology (DA-IICT), Gandhinagar**
+
+---
+
+## 💡 Problem Statement 3  
+**E-Commerce Dynamic Pricing and Personalization Engine Using Real-Time Behavioral Signals**
+
+---
+
+## 🧙 Team Name  
+**Hogwarts Tech Wizards**
+
+---
+
+## 👥 Team
+
+- **Het Limbani (Team Leader)** — ML & Backend Development  
+- **Ansh Patoliya** — ML & Frontend Development  
+- **Harsh Patel** — API, Backend & Frontend Logic  
+- **Anuj Raval** — ML Development  
+
+---
+
 <div align="center">
 
-# 🚀 Dynamic Pricing & Personalization Engine
+# 🛒 SmartCommerceAI: Dynamic Pricing & Personalization Engine
 
 **AI-powered pricing & recommendation engine for next-gen e-commerce**
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Scikit--Learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://reactjs.org/)
 [![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)](https://vitejs.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+
 
 </div>
 
 ---
 
-## 🧠 2. OVERVIEW
+## 1. Overview
 
-In today's highly competitive e-commerce landscape, static pricing and generic product displays lead to lost revenue and poor customer retention. **Dynamic Pricing & Personalization Engine** solves this by delivering a customized shopping experience for every user in real-time.
+In the modern e-commerce landscape, static pricing models and "one-size-fits-all" product displays lead to missed revenue opportunities and high customer churn. 🛒  
 
-By anticipating customer needs and adjusting prices dynamically according to supply, demand, and user behavior, this project brings enterprise-grade AI algorithms to consumer-facing platforms. It maximizes profitability for sellers while increasing value and relevance for the buyer.
+**SmartCommerceAI** is an end-to-end intelligence layer designed to transform static storefronts into high-performance, adaptive ecosystems.
+
+By leveraging real-time data streams and advanced Machine Learning, the engine optimizes the two most critical drivers of e-commerce success:
+
+- 💰 **Profit Margins**
+- 🎯 **User Engagement**
+
+---
+
+## 🎯 Core Objectives
+
+### 💵 Price Optimization
+Move beyond fixed costs to **Value-Based Pricing** by analyzing real-time market signals.
+
+### 🧠 Hyper-Personalization
+Shift from generic catalogs to **curated experiences** based on individual user behavior.
+
+### 🛡️ Revenue Protection
+Balance competitive discounting with automated **price floors** to ensure sustainable margins.
+
+---
+
+## 2. How It Works
+
+<details>
+<summary>Click to expand</summary>
+
+### 🔍 Demand-Sensing Intelligence
+- Uses **Gradient Boosting Regressor**
+- Analyzes:
+  - Traffic spikes
+  - Conversion rates
+  - Cart-addition ratios  
+- Detects "viral" demand and adjusts prices dynamically for maximum profit.
+
+---
+
+### 👤 Behavioral Segmentation
+- Performs real-time **RFM (Recency, Frequency, Monetary) analysis**
+- Classifies users into:
+  - 💎 High Spenders (loyalty-focused)
+  - 💸 Low Spenders (price-sensitive)
+- Applies **targeted discounts** only where needed.
+
+---
+
+### 🛍️ Discovery Engine
+- Uses **Apriori Algorithm**
+- Identifies:
+  - Frequently Bought Together products
+  - Hidden purchase patterns  
+- Recommends **Next-Best-Offers** to increase **Average Order Value (AOV)**.
+
+</details>
 
 ---
 
@@ -33,17 +114,61 @@ By anticipating customer needs and adjusting prices dynamically according to sup
 
 ---
 
-## 🏗️ 4. TECH STACK
+## 🏗️ 4. Tech Stack
 
 <div align="center">
 
-| **Frontend** 🎨 | **Backend** ⚙️ | **Machine Learning** 🤖 |
-|:---:|:---:|:---:|
-| React | FastAPI | Apriori Algorithm |
-| Vite | Python 3 | Pandas |
-| Tailwind CSS | REST APIs | mlxtend |
+| **Frontend** 🎨 | **Backend** ⚙️ | **Data Handling** 📊 | **Machine Learning** 🤖 |
+|:---:|:---:|:---:|:---:|
+| React.js | FastAPI / Flask | Pandas & NumPy | Gradient Boosting (GBR) |
+| Vite | Python 3.9+ | Feature Engineering | Apriori & Association Rules |
+| Tailwind CSS | RESTful APIs | Scikit-Learn Preprocessing | Polynomial Features |
+| Axios | Joblib / Pickle | Log Transformation | Hyperparameter Tuning |
 
 </div>
+
+---
+
+## 🧠 Deep Dive: Model Architecture
+
+### ⚡ Core Pricing Engine
+- **Gradient Boosting Regressor (GBR):**  
+  Powers the dynamic pricing system by learning complex, non-linear relationships between:
+  - Demand fluctuations  
+  - User behavior  
+  - Market signals  
+
+  Unlike traditional linear models, GBR adapts to changing patterns and identifies optimal price points in real time.
+
+---
+
+### 🔗 Feature Engineering Layer
+- **Polynomial Features:**  
+  Captures interaction effects between variables.  
+  Example:
+  - High Views + Low Conversion → Indicates price sensitivity  
+  - High Views + High Cart Adds → Indicates strong demand  
+
+  This helps the model understand deeper behavioral patterns beyond simple metrics.
+
+---
+
+### 📊 Data Processing Pipeline
+
+- **Normalization (Robust Scaling):**  
+  Handles extreme outliers in traffic and pricing data, ensuring stable model performance.
+
+- **Log Transformation:**  
+  Applied to skewed demand distributions to:
+  - Stabilize variance  
+  - Improve prediction accuracy  
+  - Enhance model convergence  
+
+- **Feature Aggregation:**  
+  Converts raw event logs into meaningful product-level insights such as:
+  - View-to-cart ratio  
+  - Conversion rate  
+  - Demand intensity  
 
 ---
 
@@ -90,44 +215,164 @@ flowchart LR
 
 ---
 
-## 🤖 8. AI MODEL DETAILS
+## 🤖 8. AI Model Details
 
-This engine uses the **Apriori Algorithm**, an extensively proven technique for Association Rule Mining.
+The engine operates on a **multi-model architecture**, combining:
+- 🔍 Unsupervised pattern recognition  
+- 📈 Supervised regression  
 
-* **What it is**: It discovers interesting relationships (or "rules") hidden in massive transaction datasets.
-* **How it works**: By calculating metrics like *support*, *confidence*, and *lift*, the engine identifies products that are frequently bought together.
-* **Example Output**: If a user is viewing an **`iPhone`**, the engine recognizes high confidence that they will also purchase **`AirPods`**, automatically surfacing those products.
+This hybrid approach powers both **product discovery** and **revenue optimization**.
 
 ---
 
-## 📉 9. PERFORMANCE
+## 🛒 1. Product-Level Recommendation (Apriori)
 
-```mermaid
-graph LR
-    A[User Click] -->|~50ms| B[Backend API]
-    B -->|~100ms| C[Apriori Model]
-    C -->|<10ms| D[Recommendations]
-    D -->|~40ms| E[Frontend UI]
+<details>
+<summary>Click to expand</summary>
+
+### 🔗 Overview
+The "Frequently Bought Together" engine is powered by **Association Rule Mining (Apriori Algorithm)**.
+
+### ⚙️ The Logic
+- Identifies hidden relationships in large-scale transaction datasets  
+- Analyzes **co-occurrence patterns** between products  
+
+### 📊 Key Metrics
+- **Support:** Frequency of itemset occurrence  
+- **Confidence:** Probability of buying item B given item A  
+- **Lift:** Strength of association (filters random correlations)  
+
+### 💡 Example
+If a user views an **iPhone**, the model detects a strong association with **AirPods** and recommends them instantly.
+
+</details>
+
+---
+
+## 📂 2. Category-Based Personalization
+
+<details>
+<summary>Click to expand</summary>
+
+### ❄️ Cold Start Solution
+Handles users with little or no interaction history.
+
+### ⚙️ The Logic
+- Falls back to a **Category-Heuristic Model**  
+- Uses **cross-category affinity** when product-level rules are unavailable  
+
+### 🎯 Contextual Awareness
+- Recommends top-performing products from:
+  - Same `category_code`  
+  - Related sub-categories  
+
+Ensures users always see **relevant recommendations**, even with limited data.
+
+</details>
+
+---
+
+## 📈 3. Dynamic Pricing Engine (Gradient Boosting)
+
+<details>
+<summary>Click to expand</summary>
+
+### 🧠 Overview
+Acts as the **"Revenue Brain"** of the system using **Elasticity-Based Pricing**.
+
+### ⚙️ Algorithm
+- **GradientBoostingRegressor (GBR)**
+
+### 🔄 Process
+
+1. **Feature Extraction**
+   - Log_Demand  
+   - Conversion_Rate  
+   - Cart_Ratio  
+
+2. **Predictive Modeling**
+   - Builds an ensemble of decision trees  
+   - Predicts **Optimal Price Factor** *(0.7x → 1.5x of base price)*  
+
+3. **User-Aware Adjustment**
+   - Applies **User Segmentation (AOV-based)**  
+   - Offers targeted **conversion discounts** to price-sensitive users  
+
+</details>
+
+---
+
+## 🛡️ 4. Business Guardrails (Safety Layer)
+
+<details>
+<summary>Click to expand</summary>
+
+### ⚖️ Purpose
+Ensures AI-driven decisions remain **safe, stable, and profitable**.
+
+### 🔒 Rules Implemented
+
+- **Price Floor:**  
+  No product price drops below **70% of original cost**, protecting margins  
+
+- **Inventory Buffer:**  
+  Limits aggressive pricing when stock levels are critically low  
+  → Prevents overselling at reduced margins  
+
+</details>
+
+---
+
+## 8. System Intelligence Summary
+
+- 🧠 Hybrid AI (Unsupervised + Supervised)  
+- 🎯 Personalized recommendations + pricing  
+- 💰 Revenue optimization with safety constraints  
+- ⚡ Real-time adaptive decision-making  
+
+---
+
+## 🚀 9. Project Structure
 ```
-
-* **⚡ Ultra-low latency**: Pipeline resolution in **<200ms**.
-* **🔄 Real-time adaptation**: Price scaling and behavioral mapping applied instantaneously.
-* **🚀 Efficient Compute**: Lean ML processing optimized by Pandas and backend concurrency.
-
+SmartCommerceAI/
+│
+├── backend/
+│   ├── app/
+│   │   ├── routes/
+│   │   │   └── recommendation_routes.py     # API endpoints (pricing & recommendations)
+│   │   ├── services/
+│   │   │   └── recommendation_service.py    # Core ML logic & calculations
+│   │   └── __init__.py
+│   │
+│   ├── data/
+│   │   ├── Dataset.csv                     # Raw interaction logs
+│   │   ├── model.pkl                       # Trained pricing model
+│   │   ├── recommendation_model.pkl        # Association rules model
+│   │   └── product_meta.csv                # Product metadata for API
+│   │
+│   ├── dynamic_pricing_model.py            # Pricing model training
+│   ├── cat_recommend_model.py              # Category model (Polynomial Degree 2)
+│   ├── prod_recommend_model.py             # Recommendation model training
+│   ├── requirements.txt                    # Python dependencies
+│   └── run.py                             # Flask app entry point
+│
+├── frontend/
+│   ├── public/
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── api.js                         # API integration
+│   │   ├── App.jsx                        # Main app logic
+│   │   ├── App.css
+│   │   └── main.jsx
+│   │
+│   ├── index.html
+│   └── package.json                      # Node dependencies
+│
+└── README.md
+```
 ---
 
-## 👨‍💻 10. TEAM MEMBERS
-
-### 👥 Team
-
-* **Ansh** — ML & Backend Integration
-* **Het** — Frontend Development
-* **Harsh** — API & Backend Logic
-* **Anuj** — UI/UX & Testing
-
----
-
-## 🚀 11. HOW TO RUN
+## 🚀 10. HOW TO RUN
 
 ### Backend Setup
 ```bash
@@ -138,20 +383,11 @@ python run.py
 
 ### Frontend Setup
 ```bash
-cd frontend
+cd Frontend
 npm install
 npm run dev
 ```
 
 ---
 
-## 🔥 12. FUTURE IMPROVEMENTS
 
-* **🧠 Deep Learning Integration**: Upgrade to neural collaborative filtering models for complex sequence prediction.
-* **📡 Real-time Data Streaming**: Integrate Apache Kafka for processing millions of user events per second.
-* **🎯 Hyper-Personalization**: Add demographic factors, regional clustering, and seasonal trend analytics.
-
----
-<div align="center">
-<i>Built with passion for the Hackathon</i> 💡
-</div>
