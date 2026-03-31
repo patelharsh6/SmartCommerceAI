@@ -1,13 +1,15 @@
 from flask import Flask
 from flask_cors import CORS
 from app.routes.recommendation_routes import recommendation_bp
+from app.routes.api_routes import api_bp
 
 def create_app():
     app = Flask(__name__)
     CORS(app)
 
-    # Register the Recommendation Blueprint
+    # Register Blueprints
     app.register_blueprint(recommendation_bp)
+    app.register_blueprint(api_bp)
 
     @app.route("/")
     def index():
