@@ -1,10 +1,16 @@
+import pickle
+import pandas as pd  # Fixed: added 'pandas'
+import numpy as np
+import os
 from flask import Blueprint, jsonify, request
+
 from app.services.recommendation_service import (
-    recommend_category,      # Matches service function name
-    recommend_product,       # Matches service function name
-    recommend_explain,       # Matches service function name
-    get_trending_products,    # Matches service function name
-    get_dynamic_price
+    recommend_category,
+    recommend_product,
+    recommend_explain,
+    get_trending_products,
+    get_dynamic_price,
+    recommend
 )
 
 recommendation_bp = Blueprint("recommendation", __name__)
@@ -58,3 +64,50 @@ def pricing_api(product_id):
         "suggested_price": final_price,
         "logic": reason
     }), 200
+
+
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MODEL_PATH = os.path.join(BASE_DIR, "data", "recommendation_model.pkl")
+META_PATH = os.path.join(BASE_DIR, "data", "product_meta.csv")
+
+with open(MODEL_PATH, "rb") as f:
+    recommendation_dict = pickle.load(f)
+
+product_meta = pd.read_csv(META_PATH)
+
+try:
+    with open(MODEL_PATH, "rb") as f:
+        recommendation_dict = pickle.load(f)
+    print("✅ Recommendation model loaded.")
+
+    product_meta = pd.read_csv(META_PATH)
+    product_meta['product_id'] = product_meta['product_id'].astype(str)
+    print("✅ Product metadata loaded.")
+
+except FileNotFoundError as e:
+    print(f"❌ Error: Could not find file at: {e.filename}")
+    recommendation_dict = {}
+    product_meta = pd.DataFrame(columns=['product_id', 'category_code', 'brand'])
+    
+@recommendation_bp.route("/recommend", methods=["GET"])
+def get_recommendation():
+    # Fetch product_id from query params
+    product_id = request.args.get("product_id")
+
+    if not product_id:
+        return jsonify({"error": "product_id is required"}), 400
+
+    try:
+        # Call the logic
+        recommendations = recommend(product_id)
+
+        return jsonify({
+            "status": "success",
+            "input_product": product_id,
+            "recommendations": recommendations
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

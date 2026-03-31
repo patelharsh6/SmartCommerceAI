@@ -1,153 +1,117 @@
 # =========================================
-# 1. IMPORT LIBRARIES
+# PRODUCT RECOMMENDATION MODEL TRAINING
 # =========================================
+
 import pandas as pd
-import numpy as np
-import joblib
+import pickle
 import os
-import warnings
+from collections import Counter
+from mlxtend.preprocessing import TransactionEncoder
+from mlxtend.frequent_patterns import apriori, association_rules
 
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import GradientBoostingRegressor
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-
-warnings.filterwarnings('ignore')
+# Ensure data directory exists
+os.makedirs("data", exist_ok=True)
 
 # =========================================
-# 2. LOAD DATA
+# 1. LOAD DATA
 # =========================================
-print("🚀 Loading Dataset...")
-# Ensure Dataset.csv is in the same directory
-if not os.path.exists("Dataset.csv"):
-    raise FileNotFoundError("Dataset.csv not found! Please place it in the root folder.")
+print("Reading dataset...")
+df = pd.read_csv("./data/Dataset.csv")
 
-df = pd.read_csv("Dataset.csv")
+# Optional: Sample data to manage memory if the dataset is massive
+if len(df) > 500000:
+    print("Sampling dataset to 500k rows for performance...")
+    df = df.sample(500000, random_state=42)
 
-# =========================================
-# 3. FEATURE ENGINEERING
-# =========================================
-print("🛠 Performing Feature Engineering...")
-
-# Standardize column types
+# Force string type for IDs to ensure matching works in the API
 df['product_id'] = df['product_id'].astype(str)
 
-# Event signals
-df['views'] = (df['event_type'] == 'view').astype(int)
-df['purchases'] = (df['event_type'] == 'purchase').astype(int)
-df['cart'] = (df['event_type'] == 'cart').astype(int)
-
-# Aggregate per product
-agg_df = df.groupby('product_id').agg({
-    'views': 'sum',
-    'purchases': 'sum',
-    'cart': 'sum',
-    'price': 'mean',
-    'category_code': 'first',
-    'brand': 'first'
-}).reset_index()
-
-# Demand Metrics
-agg_df['demand'] = agg_df['views'] + agg_df['purchases'] + agg_df['cart']
-agg_df['conversion_rate'] = agg_df['purchases'] / (agg_df['views'] + 1)
-agg_df['cart_ratio'] = agg_df['cart'] / (agg_df['views'] + 1)
-agg_df['log_demand'] = np.log1p(agg_df['demand'])
+# =========================================
+# 2. SAVE PRODUCT META (CRUCIAL 🔥)
+# =========================================
+print("Saving metadata...")
+# We take the first occurrence of each product to map ID -> Category/Brand
+product_meta = df[['product_id', 'category_code', 'brand']].drop_duplicates('product_id')
+product_meta.to_csv("data/product_meta.csv", index=False)
 
 # =========================================
-# 4. TARGET (PRICE FACTOR)
+# 3. CREATE & FILTER TRANSACTIONS
 # =========================================
-# Logic: 1.0 is base. Conversion/Cart intent adds premium.
-agg_df['price_factor'] = (
-    1
-    + 0.5 * agg_df['conversion_rate']
-    + 0.3 * agg_df['cart_ratio']
+print("Processing transactions...")
+# Group by user to see which products were interacted with together
+transactions = df.groupby('user_id')['product_id'].apply(list).tolist()
+
+# Filter out products that appear very rarely (less than 5 times) to improve rule quality
+all_products = [item for sublist in transactions for item in sublist]
+product_counts = Counter(all_products)
+frequent_products = {p for p, c in product_counts.items() if c >= 5}
+
+# Rebuild transactions with only frequent products and remove single-item baskets
+filtered_transactions = [
+    list(set([p for p in t if p in frequent_products]))
+    for t in transactions
+]
+filtered_transactions = [t for t in filtered_transactions if len(t) >= 2]
+
+# =========================================
+# 4. ENCODING & APRIORI
+# =========================================
+print("Running Apriori algorithm...")
+te = TransactionEncoder()
+te_array = te.fit(filtered_transactions).transform(filtered_transactions)
+df_encoded = pd.DataFrame(te_array, columns=te.columns_)
+
+# Find frequent itemsets (max_len=2 because we want 1-to-1 recommendations)
+frequent_itemsets = apriori(
+    df_encoded, 
+    min_support=0.001, 
+    use_colnames=True, 
+    max_len=2
 )
 
-# Clip to keep price changes realistic (between -30% and +50%)
-agg_df['price_factor'] = agg_df['price_factor'].clip(0.7, 1.5)
+# =========================================
+# 5. ASSOCIATION RULES
+# =========================================
+print("Generating association rules...")
+rules = association_rules(
+    frequent_itemsets, 
+    metric="confidence", 
+    min_threshold=0.05
+)
 
-# Log transform the target for the Regressor
-agg_df['target'] = np.log1p(agg_df['price_factor'])
+# Clean rules: Ensure only one product in the antecedent (input)
+rules = rules[rules['antecedents'].apply(lambda x: len(x) == 1)]
 
 # =========================================
-# 5. FEATURES SELECTION
+# 6. CREATE RECOMMENDATION DICTIONARY
 # =========================================
-features = [
-    'views',
-    'purchases',
-    'cart',
-    'log_demand',
-    'conversion_rate',
-    'cart_ratio'
-]
+print("Building recommendation dictionary...")
+recommendation_dict = {}
 
-X = agg_df[features]
-y = agg_df['target']
+for _, row in rules.iterrows():
+    # Extract strings from frozensets
+    ant = list(row['antecedents'])[0]
+    con = list(row['consequents'])[0]
+    conf = row['confidence']
 
-# =========================================
-# 6. SPLIT + SCALING
-# =========================================
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-# =========================================
-# 7. MODEL TRAINING
-# =========================================
-print("🧠 Training Gradient Boosting Regressor...")
-model = GradientBoostingRegressor(n_estimators=100, learning_rate=0.1, max_depth=4, random_state=42)
-model.fit(X_train_scaled, y_train)
-
-# =========================================
-# 8. EVALUATION
-# =========================================
-preds = model.predict(X_test_scaled)
-y_test_real = np.expm1(y_test)
-preds_real = np.expm1(preds)
-
-print("\n📈 Model Performance (on Price Factor):")
-print(f"MAE: {mean_absolute_error(y_test_real, preds_real):.4f}")
-print(f"R2 Score: {r2_score(y_test_real, preds_real):.4f}")
-
-# =========================================
-# 9. SAVE ARTIFACTS (CRITICAL FOR FLASK)
-# =========================================
-print("\n💾 Saving Model and Data...")
-
-if not os.path.exists('data'):
-    os.makedirs('data')
-
-# Save the trained model
-joblib.dump(model, "data/pricing_model.pkl")
-# Save the scaler (API needs this to scale new inputs)
-joblib.dump(scaler, "data/pricing_scaler.pkl")
-# Save the aggregated data so the API knows the "Base Price" and "Demand" per product
-agg_df.to_csv("data/pricing_processed_data.csv", index=False)
-
-print("✅ Saved: data/pricing_model.pkl")
-print("✅ Saved: data/pricing_scaler.pkl")
-print("✅ Saved: data/pricing_processed_data.csv")
-
-# =========================================
-# 10. VERIFICATION TEST
-# =========================================
-def test_output(product_id):
-    row = agg_df[agg_df['product_id'] == product_id].iloc[0]
+    if ant not in recommendation_dict:
+        recommendation_dict[ant] = []
     
-    # Feature vector for model
-    input_data = np.array([row[features].values])
-    input_scaled = scaler.transform(input_data)
-    
-    # Predicted factor
-    predicted_factor = np.expm1(model.predict(input_scaled))[0]
-    final_price = row['price'] * predicted_factor
-    
-    print(f"\nVerification for Product {product_id}:")
-    print(f"Base Price: ${row['price']:.2f}")
-    print(f"Predicted Factor: {predicted_factor:.2f}x")
-    print(f"Dynamic Price: ${final_price:.2f}")
+    recommendation_dict[ant].append((con, conf))
 
-# Run one test
-test_output(agg_df['product_id'].iloc[0])
+# Sort recommendations for each product by confidence (highest first)
+for key in recommendation_dict:
+    recommendation_dict[key] = sorted(
+        recommendation_dict[key],
+        key=lambda x: x[1],
+        reverse=True
+    )
+
+# =========================================
+# 7. SAVE MODEL
+# =========================================
+with open("data/recommendation_model.pkl", "wb") as f:
+    pickle.dump(recommendation_dict, f)
+
+print(f"✅ Success! Generated rules for {len(recommendation_dict)} products.")
+print("✅ Files saved in /data: recommendation_model.pkl, product_meta.csv")
