@@ -1,4 +1,5 @@
 import joblib
+import pickle
 import numpy as np
 import pandas as pd
 import os
@@ -151,3 +152,43 @@ def get_dynamic_price(product_id, user_id):
     price = max(price, base_price * 0.7)
 
     return round(price, 2), reason, user_type
+
+
+
+
+with open(os.path.join(BASE_DIR, "data", "recommendation_model.pkl"), "rb") as f:
+    recommendation_dict = pickle.load(f)
+
+product_meta = pd.read_csv(os.path.join(BASE_DIR, "data", "product_meta.csv"))
+product_meta['product_id'] = product_meta['product_id'].astype(str)
+
+def recommend(product_id, top_n=5):
+    product_id = str(product_id)
+
+    recs = recommendation_dict.get(product_id, [])
+
+    if not recs:
+    
+        fallback_ids = product_meta['product_id'].head(top_n).tolist()
+        recs = [(pid, 0.0) for pid in fallback_ids if pid != product_id]
+
+    rec_ids = []
+    for r in recs:
+        if r[0] not in rec_ids:
+            rec_ids.append(r[0])
+        if len(rec_ids) >= top_n:
+            break
+
+    result = []
+    for pid in rec_ids:
+        meta_row = product_meta[product_meta['product_id'] == pid]
+
+        if not meta_row.empty:
+            row = meta_row.iloc[0]
+            result.append({
+                "product_id": pid,
+                "category_code": str(row.get('category_code', 'unknown')),
+                "brand": str(row.get('brand', 'unknown'))
+            })
+
+    return result
