@@ -3,7 +3,7 @@ import './App.css'
 import * as api from './api'
 
 /* ═══════════════════════════════════════════════════════════════
-   PriceFlow AI — Main Application
+   SmartCommerceAI — Main Application
    E-Commerce Dynamic Pricing & Recommendation System
    ═══════════════════════════════════════════════════════════════ */
 
@@ -130,7 +130,7 @@ function App() {
     return (
       <div className="loading-container" style={{ minHeight: '100vh' }}>
         <div className="loading-spinner"></div>
-        <div className="loading-text">Connecting to PriceFlow AI Engine...</div>
+        <div className="loading-text">Connecting to SmartCommerceAI Engine...</div>
       </div>
     )
   }
@@ -161,28 +161,10 @@ function App() {
           <div className="navbar-brand">
             <span className="navbar-logo">🛒</span>
             <div>
-              <div className="navbar-title">PriceFlow AI</div>
-              <div className="navbar-subtitle">Dynamic Pricing Engine</div>
+              <div className="navbar-title">SmartCommerceAI</div>
             </div>
           </div>
 
-          {/* User Selector */}
-          <div className="user-selector" id="user-selector">
-            {users.map(user => (
-              <button
-                key={user.user_id}
-                className={`user-chip ${selectedUser?.user_id === user.user_id ? 'active' : ''}`}
-                onClick={() => setSelectedUser(user)}
-                id={`user-${user.user_id}`}
-              >
-                <span className="user-chip-avatar">{user.avatar}</span>
-                <div className="user-chip-info">
-                  <span className="user-chip-name">{user.name}</span>
-                  <span className="user-chip-type">{user.user_type}</span>
-                </div>
-              </button>
-            ))}
-          </div>
 
           <div className="navbar-status">
             <span className="status-dot"></span>
@@ -346,7 +328,7 @@ function App() {
         {/* ─── FOOTER ─── */}
         <footer className="footer" id="footer">
           <div className="footer-text">
-            PriceFlow AI — E-Commerce Dynamic Pricing & Recommendation System v1.0
+            SmartCommerceAI — E-Commerce Dynamic Pricing & Recommendation System v1.0
           </div>
           <div className="footer-team">
             <span className="footer-member">🔴 Harsh — Backend + Integration</span>
