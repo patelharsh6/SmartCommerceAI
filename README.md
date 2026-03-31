@@ -103,43 +103,6 @@ Balance competitive discounting with automated **price floors** to ensure sustai
 
 ---
 
-## 📈 Business Impact
-
-<details>
-<summary>Click to expand</summary>
-
-### 🏪 For the Seller
-- Maximize **inventory turnover**
-- Capture **customer willingness to pay**
-- Increase revenue during peak demand
-
----
-
-### 🛒 For the Buyer
-- Personalized shopping experience
-- Relevant product recommendations
-- Smarter and faster discovery
-
----
-
-### 🌐 For the Platform
-- Reduce manual pricing effort
-- Enable **autonomous decision-making**
-- Improve overall system efficiency
-
-</details>
-
----
-
-## 🚀 Key Benefits
-
-- 📊 Real-time data-driven decisions  
-- 🤖 Fully automated pricing engine  
-- 🎯 Precision-targeted marketing  
-- 📈 Increased conversion rates & AOV  
-
----
-
 ## ⚙️ 3. FEATURES
 
 * **🔥 Real-time dynamic pricing**: Prices update automatically based on market demand and user interaction.
@@ -206,27 +169,6 @@ Balance competitive discounting with automated **price floors** to ensure sustai
   - View-to-cart ratio  
   - Conversion rate  
   - Demand intensity  
-
----
-
-### 🧪 Model Optimization
-
-- **Hyperparameter Tuning:**  
-  Fine-tunes model performance using techniques like:
-  - Grid Search  
-  - Random Search  
-
-- **Serialization (Joblib / Pickle):**  
-  Efficient storage and deployment of trained models for real-time inference.
-
----
-
-## 🚀 Why This Architecture Works
-
-- ✅ Handles real-time, high-volume e-commerce data  
-- ✅ Captures complex user behavior patterns  
-- ✅ Scales easily with growing product catalogs  
-- ✅ Enables accurate, automated pricing decisions  
 
 ---
 
@@ -391,22 +333,7 @@ Ensures AI-driven decisions remain **safe, stable, and profitable**.
 
 ---
 
-## 📉 9. PERFORMANCE
-
-```mermaid
-graph LR
-    A[User Click] -->|~50ms| B[Backend API]
-    B -->|~100ms| C[Apriori Model]
-    C -->|<10ms| D[Recommendations]
-    D -->|~40ms| E[Frontend UI]
-```
-
-* **⚡ Ultra-low latency**: Pipeline resolution in **<200ms**.
-* **🔄 Real-time adaptation**: Price scaling and behavioral mapping applied instantaneously.
-* **🚀 Efficient Compute**: Lean ML processing optimized by Pandas and backend concurrency.
-
-
-## 🚀 10. HOW TO RUN
+## 🚀 9. HOW TO RUN
 
 ### Backend Setup
 ```bash
@@ -424,13 +351,3 @@ npm run dev
 
 ---
 
-## 🔥 12. FUTURE IMPROVEMENTS
-
-* **🧠 Deep Learning Integration**: Upgrade to neural collaborative filtering models for complex sequence prediction.
-* **📡 Real-time Data Streaming**: Integrate Apache Kafka for processing millions of user events per second.
-* **🎯 Hyper-Personalization**: Add demographic factors, regional clustering, and seasonal trend analytics.
-
----
-<div align="center">
-<i>Built with passion for the Hackathon</i> 💡
-</div>
