@@ -9,6 +9,7 @@ A complete, production-ready full-stack template created for Problem Statement #
 ## Getting Started
 
 ### Backend
+
 1. `cd backend`
 2. `python -m venv venv`
 3. `venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
