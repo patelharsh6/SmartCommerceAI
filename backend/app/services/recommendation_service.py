@@ -88,9 +88,13 @@ for _, row in pricing_data.iterrows():
 # 4. LOAD RAW EVENTS (for user classification)
 # ═══════════════════════════════════════════════════════════════
 print("  📊 Loading raw events data...")
-raw_events_df = pd.read_csv(_data_path("Dataset.csv"))
-raw_events_df['product_id'] = raw_events_df['product_id'].astype(int)
-raw_events_df['user_id'] = raw_events_df['user_id'].astype(int)
+try:
+    raw_events_df = pd.read_csv(_data_path("Dataset.csv"))
+    raw_events_df['product_id'] = raw_events_df['product_id'].astype(int)
+    raw_events_df['user_id'] = raw_events_df['user_id'].astype(int)
+except FileNotFoundError:
+    print("  ⚠️ Dataset.csv not found! Using empty user events dataframe.")
+    raw_events_df = pd.DataFrame(columns=['product_id', 'user_id', 'event_type', 'price'])
 
 
 # ═══════════════════════════════════════════════════════════════
