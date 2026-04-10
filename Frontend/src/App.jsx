@@ -14,6 +14,11 @@ import CheckoutPage from './pages/CheckoutPage'
    E-Commerce Dynamic Pricing & Recommendation System
    ═══════════════════════════════════════════════════════════════ */
 
+import { getImageForProduct } from './utils'
+import SearchBar from './components/SearchBar'
+import Sidebar from './components/Sidebar'
+import ProductCard from './components/ProductCard'
+
 function App() {
   return (
     <Routes>
@@ -50,6 +55,7 @@ function HomePage() {
   const [addingToCart, setAddingToCart] = useState(null)
   const [cartMessage, setCartMessage] = useState('')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   // ─── Initial Data Load ───
   useEffect(() => {
@@ -138,7 +144,11 @@ function HomePage() {
     }
   }, [expandedParent])
 
-  const filteredProducts = products
+  const filteredProducts = products.filter(p => {
+    if (!searchQuery) return true
+    const q = searchQuery.toLowerCase()
+    return p.name.toLowerCase().includes(q) || (p.category && p.category.toLowerCase().includes(q))
+  })
 
   // ─── Handle product click ───
   const handleProductClick = useCallback(async (product) => {
@@ -247,7 +257,7 @@ function HomePage() {
       {/* ─── CART MESSAGE TOAST ─── */}
       {cartMessage && (
         <div className="cart-toast animate-in" id="cart-toast">
-          <span>✅</span> {cartMessage}
+          {cartMessage}
         </div>
       )}
 
@@ -255,15 +265,19 @@ function HomePage() {
       <nav className="navbar" id="navbar">
         <div className="navbar-inner">
           <Link to="/" className="navbar-brand" style={{ textDecoration: 'none' }}>
-            <span className="navbar-logo">🛒</span>
             <div>
-              <div className="navbar-title">SmartCommerceAI</div>
+              <div className="navbar-title" style={{ fontSize: '24px' }}>SmartCommerceAI</div>
             </div>
           </Link>
 
+          <SearchBar
+            products={products}
+            onSelectProduct={handleProductClick}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+          />
+
           <div className="navbar-actions">
-
-
             {/* Cart Button */}
             <Link to="/cart" className="navbar-cart-btn" id="navbar-cart-btn">
               <span className="cart-icon">🛒</span>
@@ -317,21 +331,31 @@ function HomePage() {
       </nav>
 
       <div className="app-container">
-        {/* ─── HERO ─── */}
-        <section className="hero animate-in" id="hero-section">
-          <h1>Smart Pricing, <span>Smarter Shopping</span></h1>
-          <p className="hero-desc">
-            Real-time dynamic pricing powered by demand analysis, competitor tracking,
-            and personalized user segments — all working together seamlessly.
-          </p>
-          {!isAuthenticated && (
-            <div className="hero-cta">
-              <Link to="/signup" className="hero-cta-btn" id="hero-signup-btn">
-                🚀 Get Started — It's Free
-              </Link>
-            </div>
-          )}
-        </section>
+        <div className="dashboard-layout">
+          {/* ─── SIDEBAR ─── */}
+          <Sidebar
+            categories={categories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={handleCategoryClick}
+          />
+
+          {/* ─── MAIN CONTENT ─── */}
+          <main className="dashboard-main">
+            {/* ─── HERO ─── */}
+            <section className="hero animate-in" id="hero-section" style={{ borderRadius: '12px', padding: '40px', marginBottom: '32px' }}>
+              <h1 style={{ fontSize: '40px' }}>Smart Pricing, <span>Smarter Shopping</span></h1>
+              <p className="hero-desc" style={{ fontSize: '16px' }}>
+                Real-time dynamic pricing powered by demand analysis, competitor tracking,
+                and personalized user segments — all working together seamlessly.
+              </p>
+              {!isAuthenticated && (
+                <div className="hero-cta">
+                  <Link to="/signup" className="hero-cta-btn" id="hero-signup-btn">
+                    Get Started — It's Free
+                  </Link>
+                </div>
+              )}
+            </section>
 
         {/* ─── STATS BAR ─── */}
         {dashboard && (
@@ -385,7 +409,7 @@ function HomePage() {
         <section className="trending-section animate-in animate-in-delay-1" id="trending-section">
           <div className="section-header">
             <div className="section-title">
-              <span className="section-icon">🔥</span> Trending Now
+              Trending Now
             </div>
             <span className="section-badge">Live Data</span>
           </div>
@@ -399,10 +423,10 @@ function HomePage() {
                 style={{ animationDelay: `${i * 0.1}s` }}
               >
                 <span className="trending-rank">{item.trending_rank}</span>
-                <div className="trending-emoji">{item.image}</div>
+                <div className="trending-image" style={{height: '120px', marginBottom: '10px', borderRadius: '8px', overflow: 'hidden'}}><img src={getImageForProduct(item)} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
                 <div className="trending-name">{item.name}</div>
                 <div className="trending-views">{item.view_count} interactions</div>
-                <div className="trending-price">${item.base_price}</div>
+                <div className="trending-price">₹{item.base_price}</div>
               </div>
             ))}
           </div>
@@ -412,63 +436,10 @@ function HomePage() {
         <section className="animate-in animate-in-delay-2" id="products-section">
           <div className="section-header">
             <div className="section-title">
-              <span className="section-icon">📦</span> Product Catalog
+              Product Catalog
             </div>
             <span className="section-badge">{filteredProducts.length} items</span>
           </div>
-
-          {/* Category Filters — Parent Level */}
-          <div className="category-filters" id="category-filters">
-            <button
-              className={`category-btn ${!selectedCategory ? 'active' : ''}`}
-              onClick={() => {
-                setSelectedCategory(null)
-                setExpandedParent(null)
-              }}
-            >
-              All
-            </button>
-            {categories.map(cat => (
-              <button
-                key={cat.code}
-                className={`category-btn ${
-                  selectedCategory === cat.code || 
-                  (cat.subcategories && cat.subcategories.some(s => s.code === selectedCategory))
-                    ? 'active' : ''
-                }`}
-                onClick={() => handleCategoryClick(cat.code, true)}
-              >
-                {cat.name} ({cat.count})
-              </button>
-            ))}
-          </div>
-
-          {/* Subcategory Filters */}
-          {expandedParent && (() => {
-            const parent = categories.find(c => c.code === expandedParent)
-            if (!parent || !parent.subcategories || parent.subcategories.length === 0) return null
-            return (
-              <div className="category-filters subcategory-filters" style={{ paddingTop: 0 }}>
-                <button
-                  className={`category-btn sub-btn ${selectedCategory === expandedParent ? 'active' : ''}`}
-                  onClick={() => setSelectedCategory(expandedParent)}
-                  style={{ fontSize: 12 }}
-                >
-                  All {parent.name}
-                </button>
-                {parent.subcategories.map(sub => (
-                  <button
-                    key={sub.code}
-                    className={`category-btn sub-btn ${selectedCategory === sub.code ? 'active' : ''}`}
-                    onClick={() => handleCategoryClick(sub.code, false)}
-                    style={{ fontSize: 12 }}
-                  >
-                    {sub.name}
-                  </button>
-                ))}
-              </div>
-            )
-          })()}
 
           {/* Product Grid */}
           <div className="product-grid" id="product-grid">
@@ -478,46 +449,16 @@ function HomePage() {
                 const isTrending = trending.some(t => t.product_id === product.product_id)
                 const finalPrice = priceData ? priceData.final_price : product.base_price
                 return (
-                  <div
+                  <ProductCard
                     key={product.product_id}
-                    className="product-card animate-in"
-                    style={{ animationDelay: `${i * 0.05}s` }}
-                    onClick={() => handleProductClick(product)}
-                    id={`product-${product.product_id}`}
-                  >
-                    {isTrending && (
-                      <span className="trending-badge">🔥 Trending</span>
-                    )}
-                    <span className="product-card-emoji">{product.image}</span>
-                    <div className="product-card-category">{product.category}</div>
-                    <div className="product-card-name">{product.name}</div>
-                    <div className="product-card-desc">{product.description}</div>
-                    <div className="product-card-price">
-                      <span className="price-current">
-                        ${priceData ? priceData.final_price : product.base_price}
-                      </span>
-                      {priceData && priceData.final_price !== priceData.base_price && (
-                        <>
-                          <span className="price-base">${priceData.base_price}</span>
-                          <span className={`price-badge ${priceData.savings_percent > 0 ? 'savings' : 'increase'}`}>
-                            {priceData.savings_percent > 0 ? `Save ${priceData.savings_percent}%` : `+${Math.abs(priceData.savings_percent)}%`}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <button
-                      className={`add-to-cart-btn ${addingToCart === product.product_id ? 'adding' : ''}`}
-                      onClick={(e) => handleAddToCart(product, finalPrice, e)}
-                      disabled={addingToCart === product.product_id}
-                      id={`add-cart-${product.product_id}`}
-                    >
-                      {addingToCart === product.product_id ? (
-                        <><span className="btn-spinner-sm"></span> Adding...</>
-                      ) : (
-                        <>🛒 Add to Cart</>
-                      )}
-                    </button>
-                  </div>
+                    product={product}
+                    priceData={priceData}
+                    isTrending={isTrending}
+                    onClick={handleProductClick}
+                    onAddToCart={handleAddToCart}
+                    addingToCart={addingToCart}
+                    animationDelay={i * 0.05}
+                  />
                 )
               })
             ) : (
@@ -545,6 +486,8 @@ function HomePage() {
             )}
           </div>
         </section>
+      </main>
+      </div>
 
         {/* ─── FOOTER ─── */}
         <footer className="footer" id="footer">
@@ -572,7 +515,7 @@ function HomePage() {
 
             {/* Header */}
             <div className="detail-header">
-              <div className="detail-emoji">{selectedProduct.image}</div>
+              <div className="detail-image" style={{ width: '140px', height: '140px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}><img src={getImageForProduct(selectedProduct)} alt={selectedProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
               <div className="detail-info">
                 <div className="detail-category">{selectedProduct.category}</div>
                 <h2 className="detail-name">{selectedProduct.name}</h2>
@@ -595,7 +538,7 @@ function HomePage() {
                   {addingToCart === selectedProduct.product_id ? (
                     <><span className="btn-spinner-sm"></span> Adding...</>
                   ) : (
-                    <>🛒 Add to Cart — ${productPricing ? productPricing.final_price : selectedProduct.base_price}</>
+                    <>Add to Cart — ₹{productPricing ? productPricing.final_price : selectedProduct.base_price}</>
                   )}
                 </button>
               </div>
@@ -604,30 +547,29 @@ function HomePage() {
             {/* Pricing Section */}
             <div className="pricing-section" id="pricing-section">
               <div className="section-title" style={{ marginBottom: 20 }}>
-                <span className="section-icon">💰</span> Dynamic Price Breakdown
+                Dynamic Price Breakdown
               </div>
 
               {productPricing ? (
                 <>
                   <div className="pricing-header">
                     <div className="pricing-main">
-                      <span className="pricing-final">${productPricing.final_price}</span>
+                      <span className="pricing-final">₹{productPricing.final_price}</span>
                       {productPricing.final_price !== productPricing.base_price && (
-                        <span className="pricing-original">${productPricing.base_price}</span>
+                        <span className="pricing-original">₹{productPricing.base_price}</span>
                       )}
                     </div>
                     {productPricing.savings_percent !== 0 && (
                       <span className={`pricing-savings-badge ${productPricing.savings_percent > 0 ? 'saving' : 'increase'}`}>
                         {productPricing.savings_percent > 0
-                          ? `You save $${productPricing.total_savings} (${productPricing.savings_percent}%)`
-                          : `+$${Math.abs(productPricing.total_savings)} (${Math.abs(productPricing.savings_percent)}%)`
+                          ? `You save ₹${productPricing.total_savings} (${productPricing.savings_percent}%)`
+                          : `+₹${Math.abs(productPricing.total_savings)} (${Math.abs(productPricing.savings_percent)}%)`
                         }
                       </span>
                     )}
                   </div>
 
                   <div className="pricing-explanation">
-                    <span className="pricing-explanation-icon">🧠</span>
                     {productPricing.explanation}
                   </div>
 
@@ -648,54 +590,7 @@ function HomePage() {
                     ))}
                   </div>
 
-                  {/* Demand Stats from ML Model */}
-                  {productPricing.demand_stats && (
-                    <div style={{
-                      display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10,
-                      marginTop: 16, padding: 14, borderRadius: 12,
-                      background: 'var(--bg-secondary, #f8f9fc)'
-                    }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--primary)' }}>
-                          {productPricing.demand_stats.views}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Views</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--success, #22c55e)' }}>
-                          {productPricing.demand_stats.purchases}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Purchases</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--warning, #f59e0b)' }}>
-                          {productPricing.demand_stats.cart_adds}
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Cart Adds</div>
-                      </div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--danger, #ef4444)' }}>
-                          {(productPricing.demand_stats.conversion_rate * 100).toFixed(1)}%
-                        </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Conversion</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cache Date Indicator */}
-                  {productPricing.cache_date && (
-                    <div style={{
-                      marginTop: 12, fontSize: 11, color: 'var(--text-muted)',
-                      display: 'flex', alignItems: 'center', gap: 6
-                    }}>
-                      <span>🔄</span> Price calculated for {productPricing.cache_date} • Refreshes daily
-                      {productPricing.ml_factor && (
-                        <span style={{ marginLeft: 'auto', fontFamily: 'monospace' }}>
-                          ML Factor: {productPricing.ml_factor}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  
                 </>
               ) : (
                 <div className="loading-container">
@@ -708,7 +603,7 @@ function HomePage() {
             {/* Recommendations Section */}
             <div className="recommendations-section" id="recommendations-section">
               <div className="section-title" style={{ marginBottom: 20 }}>
-                <span className="section-icon">🎯</span> Personalized Recommendations
+                Personalized Recommendations
               </div>
 
               {productRecs ? (
@@ -723,9 +618,9 @@ function HomePage() {
                       <div className="rec-scroll">
                         {productRecs.category_based.products.map(rec => (
                           <div key={rec.product_id} className="rec-card" onClick={() => handleRecClick(rec)}>
-                            <div className="rec-card-emoji">{rec.image}</div>
+                            <div className="rec-card-image" style={{ height: '100px', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden' }}><img src={getImageForProduct(rec)} alt={rec.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
                             <div className="rec-card-name">{rec.name}</div>
-                            <div className="rec-card-price">${rec.base_price}</div>
+                            <div className="rec-card-price">₹{rec.base_price}</div>
                           </div>
                         ))}
                       </div>
@@ -742,9 +637,9 @@ function HomePage() {
                       <div className="rec-scroll">
                         {productRecs.frequently_bought.products.map(rec => (
                           <div key={rec.product_id} className="rec-card" onClick={() => handleRecClick(rec)}>
-                            <div className="rec-card-emoji">{rec.image}</div>
+                            <div className="rec-card-image" style={{ height: '100px', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden' }}><img src={getImageForProduct(rec)} alt={rec.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
                             <div className="rec-card-name">{rec.name}</div>
-                            <div className="rec-card-price">${rec.base_price}</div>
+                            <div className="rec-card-price">₹{rec.base_price}</div>
                           </div>
                         ))}
                       </div>
@@ -761,9 +656,9 @@ function HomePage() {
                       <div className="rec-scroll">
                         {productRecs.session_based.products.map(rec => (
                           <div key={rec.product_id} className="rec-card" onClick={() => handleRecClick(rec)}>
-                            <div className="rec-card-emoji">{rec.image}</div>
+                            <div className="rec-card-image" style={{ height: '100px', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden' }}><img src={getImageForProduct(rec)} alt={rec.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
                             <div className="rec-card-name">{rec.name}</div>
-                            <div className="rec-card-price">${rec.base_price}</div>
+                            <div className="rec-card-price">₹{rec.base_price}</div>
                           </div>
                         ))}
                       </div>
@@ -780,9 +675,9 @@ function HomePage() {
                       <div className="rec-scroll">
                         {productRecs.trending.products.map(rec => (
                           <div key={rec.product_id} className="rec-card" onClick={() => handleRecClick(rec)}>
-                            <div className="rec-card-emoji">{rec.image}</div>
+                            <div className="rec-card-image" style={{ height: '100px', marginBottom: '12px', borderRadius: '8px', overflow: 'hidden' }}><img src={getImageForProduct(rec)} alt={rec.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
                             <div className="rec-card-name">{rec.name}</div>
-                            <div className="rec-card-price">${rec.base_price}</div>
+                            <div className="rec-card-price">₹{rec.base_price}</div>
                           </div>
                         ))}
                       </div>

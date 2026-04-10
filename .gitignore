@@ -9,7 +9,7 @@ backend/__pycache__/
 
 # Env
 .env
-
+backend/.venv/
 
 
 # OS

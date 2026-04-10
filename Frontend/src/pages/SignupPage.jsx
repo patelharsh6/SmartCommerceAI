@@ -56,14 +56,14 @@ export default function SignupPage() {
             <div className="auth-container auth-container-wide animate-in">
                 <div className="auth-header">
                     <Link to="/" className="auth-back-link">← Back to Store</Link>
-                    <div className="auth-logo">🛒</div>
+                    <div className="auth-logo"></div>
                     <h1 className="auth-title">Create Account</h1>
                     <p className="auth-subtitle">Join SmartCommerceAI for personalized shopping</p>
                 </div>
 
                 {error && (
                     <div className="auth-error" id="signup-error">
-                        <span>⚠️</span> {error}
+                        <span></span> {error}
                     </div>
                 )}
 

@@ -64,7 +64,7 @@ export default function CartPage() {
         return (
             <div className="auth-page">
                 <div className="auth-container animate-in" style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 64, marginBottom: 16 }}>🛒</div>
+                    <div style={{ fontSize: 64, marginBottom: 16 }}></div>
                     <h2 style={{ marginBottom: 12 }}>Sign in to view cart</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
                         Please login to add items to your cart and place orders.
@@ -92,14 +92,14 @@ export default function CartPage() {
                 <div className="cart-header">
                     <Link to="/" className="auth-back-link">← Continue Shopping</Link>
                     <h1 className="cart-title">
-                        <span>🛒</span> Your Cart
+                        Your Cart
                         <span className="cart-count-badge">{cart.item_count} item{cart.item_count !== 1 ? 's' : ''}</span>
                     </h1>
                 </div>
 
                 {cart.items.length === 0 ? (
                     <div className="empty-state">
-                        <div className="empty-state-icon">🛒</div>
+                        <div className="empty-state-icon"></div>
                         <h3>Your cart is empty</h3>
                         <p>Browse our products and add some items!</p>
                         <Link to="/" className="auth-submit-btn" style={{ display: 'inline-block', textDecoration: 'none', marginTop: 16 }}>
@@ -115,7 +115,7 @@ export default function CartPage() {
                                     <div className="cart-item-details">
                                         <div className="cart-item-name">{item.name}</div>
                                         <div className="cart-item-category">{item.category}</div>
-                                        <div className="cart-item-unit-price">${item.price.toFixed(2)} each</div>
+                                        <div className="cart-item-unit-price">₹{item.price.toFixed(2)} each</div>
                                     </div>
                                     <div className="cart-item-controls">
                                         <div className="quantity-control">
@@ -135,14 +135,14 @@ export default function CartPage() {
                                                 +
                                             </button>
                                         </div>
-                                        <div className="cart-item-total">${(item.price * item.quantity).toFixed(2)}</div>
+                                        <div className="cart-item-total">₹{(item.price * item.quantity).toFixed(2)}</div>
                                         <button
                                             className="cart-remove-btn"
                                             onClick={() => handleRemove(item.product_id)}
                                             disabled={updating === item.product_id}
                                             title="Remove item"
                                         >
-                                            🗑️
+                                            Remove
                                         </button>
                                     </div>
                                 </div>
@@ -154,7 +154,7 @@ export default function CartPage() {
                                 <h3 className="cart-summary-title">Order Summary</h3>
                                 <div className="cart-summary-row">
                                     <span>Subtotal ({cart.item_count} items)</span>
-                                    <span>${cart.total.toFixed(2)}</span>
+                                    <span>₹{cart.total.toFixed(2)}</span>
                                 </div>
                                 <div className="cart-summary-row">
                                     <span>Shipping</span>
@@ -162,12 +162,12 @@ export default function CartPage() {
                                 </div>
                                 <div className="cart-summary-row">
                                     <span>Payment</span>
-                                    <span>💵 Cash on Delivery</span>
+                                    <span>Cash on Delivery</span>
                                 </div>
                                 <div className="cart-summary-divider"></div>
                                 <div className="cart-summary-row cart-summary-total">
                                     <span>Total</span>
-                                    <span>${cart.total.toFixed(2)}</span>
+                                    <span>₹{cart.total.toFixed(2)}</span>
                                 </div>
                                 <button
                                     className="checkout-btn"
@@ -177,7 +177,7 @@ export default function CartPage() {
                                     Proceed to Checkout →
                                 </button>
                                 <div className="cod-notice">
-                                    <span>💵</span> Pay with cash when your order is delivered
+                                    <span></span> Pay with cash when your order is delivered
                                 </div>
                             </div>
                         </div>
