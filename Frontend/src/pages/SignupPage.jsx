@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, User, Phone, MapPin } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import BACKEND_URL from '../config';
 import './SignupPage.css';
 
@@ -143,14 +144,31 @@ export default function SignupPage() {
         }
     };
 
+    const pageTransition = {
+        initial: { opacity: 0, x: 20 },
+        animate: { opacity: 1, x: 0 },
+        exit: { opacity: 0, x: -20 },
+        transition: { type: 'spring', stiffness: 300, damping: 30 }
+    };
+
     return (
-        <div className="auth-split-layout">
+        <motion.div 
+            className="auth-split-layout"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
             <div className="auth-left">
-                <div className="auth-left-content animate-in">
+                <motion.div 
+                    className="auth-left-content"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
                     <div className="auth-logo-large">🛍️</div>
                     <h2 className="auth-left-title">SmartCommerceAI</h2>
                     <p className="auth-left-desc">Join to unlock intelligent product recommendations and AI-driven dynamic pricing.</p>
-                </div>
+                </motion.div>
                 <div className="auth-left-bg-shapes">
                     <div className="shape shape-1"></div>
                     <div className="shape shape-2"></div>
@@ -158,7 +176,11 @@ export default function SignupPage() {
             </div>
 
             <div className="auth-right">
-                <div className={`auth-container ${step === 1 ? 'auth-container-wide' : ''} animate-in`}>
+                <motion.div 
+                    className={`auth-container ${step === 1 ? 'auth-container-wide' : ''}`}
+                    layout
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
                     <div className="auth-header">
                         {step === 1 ? (
                             <Link to="/" className="auth-back-link">← Back to Store</Link>
@@ -177,132 +199,161 @@ export default function SignupPage() {
                         </p>
                     </div>
 
-                    {error && (
-                        <div className="auth-error">
-                            <span>⚠️</span> {error}
-                        </div>
-                    )}
-
-                    {success && (
-                        <div className="auth-success">
-                            {success}
-                        </div>
-                    )}
-
-                    {step === 1 ? (
-                        <form onSubmit={handleSubmit} className="auth-form">
-                            <div className="form-row">
-                                <InputField
-                                    label="Full Name *"
-                                    icon={User}
-                                    name="name"
-                                    type="text"
-                                    placeholder="e.g. Alex Johnson"
-                                    value={formData.name}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                <InputField
-                                    label="Email Address *"
-                                    icon={Mail}
-                                    name="email"
-                                    type="email"
-                                    placeholder="alex@example.com"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="form-row">
-                                <PasswordField
-                                    label="Password *"
-                                    name="password"
-                                    placeholder="Min. 6 characters"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    required
-                                />
-                                <PasswordField
-                                    label="Confirm Password *"
-                                    name="confirmPassword"
-                                    placeholder="Repeat password"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="password-rules">
-                                {[
-                                    [passwordRules.length, 'Minimum 6 characters'],
-                                    [passwordRules.uppercase, '1 uppercase letter'],
-                                    [passwordRules.number, '1 number'],
-                                    [passwordRules.special, '1 special character'],
-                                    [isMatch, 'Passwords match']
-                                ].map(([valid, label], i) => (
-                                    <p key={i} className={`rule ${valid ? 'valid' : 'invalid'}`}>
-                                        {valid ? '✅' : '○'} {label}
-                                    </p>
-                                ))}
-                            </div>
-
-                            <div className="form-row">
-                                <InputField
-                                    label="Phone Number"
-                                    icon={Phone}
-                                    name="phone"
-                                    type="tel"
-                                    placeholder="+1 (555) 000-0000"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                />
-                                <InputField
-                                    label="Delivery Address"
-                                    icon={MapPin}
-                                    name="address"
-                                    type="text"
-                                    placeholder="Street, City, Zip"
-                                    value={formData.address}
-                                    onChange={handleChange}
-                                />
-                            </div>
-
-                            <button
-                                type="submit"
-                                className="auth-submit-btn"
-                                disabled={loading || !Object.values(passwordRules).every(Boolean) || !isMatch}
+                    <AnimatePresence mode="wait">
+                        {error && (
+                            <motion.div 
+                                key="error"
+                                className="auth-error"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0, x: [-10, 10, -10, 10, 0] }}
+                                exit={{ opacity: 0 }}
                             >
-                                {loading ? <span className="btn-spinner"></span> : 'Create Account'}
-                            </button>
-                        </form>
-                    ) : (
-                        <form onSubmit={handleOTPSubmit} className="auth-form">
-                            <div className="premium-form-group">
-                                <label className="premium-form-label" style={{ textAlign: 'center' }}>Secure Verification Code</label>
-                                <OTPInput length={6} value={otp} onChange={setOtp} />
-                            </div>
-                            
-                            <button type="submit" className="auth-submit-btn" disabled={loading || otp.length !== 6}>
-                                {loading ? <span className="btn-spinner"></span> : 'Verify & Continue'}
-                            </button>
-                            <button
-                                type="button"
-                                className="resend-link"
-                                onClick={handleResendOTP}
-                                disabled={resendLoading}
+                                <span>⚠️</span> {error}
+                            </motion.div>
+                        )}
+                        {success && (
+                            <motion.div 
+                                key="success"
+                                className="auth-success"
+                                initial={{ opacity: 0, y: -10, scale: 0.9 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0 }}
                             >
-                                {resendLoading ? 'Sending...' : 'Resend OTP Code'}
-                            </button>
-                        </form>
-                    )}
+                                {success}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    <AnimatePresence mode="wait">
+                        {step === 1 ? (
+                            <motion.form key="step1" onSubmit={handleSubmit} className="auth-form" {...pageTransition}>
+                                <div className="form-row">
+                                    <InputField
+                                        label="Full Name *"
+                                        icon={User}
+                                        name="name"
+                                        type="text"
+                                        value={formData.name}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                    <InputField
+                                        label="Email Address *"
+                                        icon={Mail}
+                                        name="email"
+                                        type="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="form-row">
+                                    <PasswordField
+                                        label="Password *"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                    <PasswordField
+                                        label="Confirm Password *"
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="password-rules">
+                                    {[
+                                        [passwordRules.length, 'Minimum 6 characters'],
+                                        [passwordRules.uppercase, '1 uppercase letter'],
+                                        [passwordRules.number, '1 number'],
+                                        [passwordRules.special, '1 special character'],
+                                        [isMatch, 'Passwords match']
+                                    ].map(([valid, label], i) => (
+                                        <motion.p 
+                                            key={i} 
+                                            className={`rule ${valid ? 'valid' : 'invalid'}`}
+                                            animate={{ color: valid ? 'var(--success)' : 'var(--text-muted)' }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <motion.span 
+                                                initial={false}
+                                                animate={{ scale: valid ? [1, 1.5, 1] : 1 }}
+                                                transition={{ duration: 0.4 }}
+                                            >
+                                                {valid ? '✅' : '○'}
+                                            </motion.span>
+                                            {' '}{label}
+                                        </motion.p>
+                                    ))}
+                                </div>
+
+                                <div className="form-row">
+                                    <InputField
+                                        label="Phone Number"
+                                        icon={Phone}
+                                        name="phone"
+                                        type="tel"
+                                        value={formData.phone}
+                                        onChange={handleChange}
+                                    />
+                                    <InputField
+                                        label="Delivery Address"
+                                        icon={MapPin}
+                                        name="address"
+                                        type="text"
+                                        value={formData.address}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+
+                                <motion.button
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    type="submit"
+                                    className="auth-submit-btn"
+                                    disabled={loading || !Object.values(passwordRules).every(Boolean) || !isMatch}
+                                >
+                                    {loading ? <span className="btn-spinner"></span> : 'Create Account'}
+                                </motion.button>
+                            </motion.form>
+                        ) : (
+                            <motion.form key="step2" onSubmit={handleOTPSubmit} className="auth-form" {...pageTransition}>
+                                <div className="premium-form-group">
+                                    <label className="premium-form-label" style={{ textAlign: 'center' }}>Secure Verification Code</label>
+                                    <OTPInput length={6} value={otp} onChange={setOtp} isError={!!error} />
+                                </div>
+                                
+                                <motion.button 
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    type="submit" 
+                                    className="auth-submit-btn" 
+                                    disabled={loading || otp.length !== 6}
+                                >
+                                    {loading ? <span className="btn-spinner"></span> : 'Verify & Continue'}
+                                </motion.button>
+                                <button
+                                    type="button"
+                                    className="resend-link"
+                                    onClick={handleResendOTP}
+                                    disabled={resendLoading}
+                                >
+                                    {resendLoading ? 'Sending...' : 'Resend OTP Code'}
+                                </button>
+                            </motion.form>
+                        )}
+                    </AnimatePresence>
 
                     <div className="auth-footer">
                         Already have an account?{' '}
                         <Link to="/login" className="auth-link">Sign in</Link>
                     </div>
-                </div>
+                </motion.div>
             </div>
-        </div>
+        </motion.div>
     );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Mail } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import './SignupPage.css';
 
 import InputField from '../components/InputField';
@@ -32,13 +33,23 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="auth-split-layout">
+        <motion.div 
+            className="auth-split-layout"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
             <div className="auth-left">
-                <div className="auth-left-content animate-in">
+                <motion.div 
+                    className="auth-left-content"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
                     <div className="auth-logo-large">🛍️</div>
                     <h2 className="auth-left-title">Welcome Back</h2>
                     <p className="auth-left-desc">Sign in to orchestrate your personalized shopping journey today.</p>
-                </div>
+                </motion.div>
                 <div className="auth-left-bg-shapes">
                     <div className="shape shape-1"></div>
                     <div className="shape shape-2"></div>
@@ -53,11 +64,20 @@ export default function LoginPage() {
                         <p className="auth-subtitle">Access your SmartCommerceAI account</p>
                     </div>
 
-                    {error && (
-                        <div className="auth-error" id="login-error">
-                            <span>⚠️</span> {error}
-                        </div>
-                    )}
+                    <AnimatePresence>
+                        {error && (
+                            <motion.div 
+                                className="auth-error" 
+                                id="login-error"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0, x: [-10, 10, -10, 10, 0] }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.4 }}
+                            >
+                                <span>⚠️</span> {error}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     <form onSubmit={handleSubmit} className="auth-form" id="login-form">
                         <InputField
@@ -90,20 +110,22 @@ export default function LoginPage() {
                                     />
                                     Remember me
                                 </label>
-                                <a href="#" onClick={(e) => { e.preventDefault(); alert('Forgot password functionality coming soon!'); }} className="auth-link" style={{ fontSize: '13px', fontWeight: 500 }}>
+                                <Link to="/forgot-password" className="auth-link" style={{ fontSize: '13px', fontWeight: 500 }}>
                                     Forgot password?
-                                </a>
+                                </Link>
                             </div>
                         </div>
 
-                        <button
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
                             type="submit"
                             className="auth-submit-btn"
-                            disabled={loading}
+                            disabled={loading || !email || !password}
                             id="login-submit-btn"
                         >
                             {loading ? <span className="btn-spinner"></span> : 'Sign In'}
-                        </button>
+                        </motion.button>
                     </form>
 
                     <div className="auth-footer">
@@ -114,6 +136,6 @@ export default function LoginPage() {
                     </div>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
