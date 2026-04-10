@@ -8,24 +8,15 @@ from datetime import datetime
 import bcrypt
 import jwt
 import functools
+import uuid
+from app.db import users_collection, carts_collection, orders_collection
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
-# ═══════════════════════════════════════════════════════════════
-# IN-MEMORY STORES
-# ═══════════════════════════════════════════════════════════════
-REGISTERED_USERS = {}   # email -> {id, name, email, password_hash, phone, address, avatar, created_at}
-USER_CARTS = {}         # user_id -> [{product_id, name, image, price, quantity}]
-USER_ORDERS = {}        # user_id -> [{order_id, items, total, status, address, phone, created_at}]
-
 JWT_SECRET = "smartcommerce-secret-key-2026"
-_user_counter = 0
-
 
 def _generate_user_id():
-    global _user_counter
-    _user_counter += 1
-    return f"USER_{_user_counter:04d}"
+    return f"USER_{str(uuid.uuid4())[:8].upper()}"
 
 
 def _generate_order_id():
@@ -42,7 +33,12 @@ def _get_current_user():
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         email = payload.get("email")
-        return REGISTERED_USERS.get(email)
+        if email:
+            user = users_collection.find_one({"email": email})
+            if user:
+                user['_id'] = str(user['_id'])
+                return user
+        return None
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
 
@@ -81,7 +77,7 @@ def signup():
     if len(password) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
 
-    if email in REGISTERED_USERS:
+    if users_collection.find_one({"email": email}):
         return jsonify({"error": "An account with this email already exists"}), 409
 
     password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -99,9 +95,9 @@ def signup():
         "total_spent": 0.0,
     }
 
-    REGISTERED_USERS[email] = user
-    USER_CARTS[user_id] = []
-    USER_ORDERS[user_id] = []
+    users_collection.insert_one(user)
+    carts_collection.insert_one({"user_id": user_id, "items": []})
+    orders_collection.insert_one({"user_id": user_id, "orders": []})
 
     # Generate JWT
     token = jwt.encode({"email": email, "user_id": user_id}, JWT_SECRET, algorithm="HS256")
@@ -134,7 +130,7 @@ def login():
     if not email or not password:
         return jsonify({"error": "Email and password are required"}), 400
 
-    user = REGISTERED_USERS.get(email)
+    user = users_collection.find_one({"email": email})
     if not user:
         return jsonify({"error": "Invalid email or password"}), 401
 
@@ -167,7 +163,8 @@ def login():
 def get_profile(user):
     """Get current user's profile."""
     user_id = user["id"]
-    orders = USER_ORDERS.get(user_id, [])
+    user_orders_doc = orders_collection.find_one({"user_id": user_id})
+    orders = user_orders_doc.get("orders", []) if user_orders_doc else []
 
     return jsonify({
         "user": {
@@ -201,6 +198,13 @@ def update_profile(user):
     if "avatar" in data:
         user["avatar"] = data["avatar"]
 
+    users_collection.update_one({"id": user["id"]}, {"$set": {
+        "name": user.get("name"),
+        "phone": user.get("phone"),
+        "address": user.get("address"),
+        "avatar": user.get("avatar")
+    }})
+
     return jsonify({
         "user": {
             "id": user["id"],
@@ -224,7 +228,8 @@ def update_profile(user):
 @require_auth
 def get_cart(user):
     """Get current user's cart."""
-    cart = USER_CARTS.get(user["id"], [])
+    user_cart_doc = carts_collection.find_one({"user_id": user["id"]})
+    cart = user_cart_doc.get("items", []) if user_cart_doc else []
     total = sum(item["price"] * item["quantity"] for item in cart)
     return jsonify({
         "items": cart,
@@ -251,7 +256,12 @@ def add_to_cart(user):
     if not product_id:
         return jsonify({"error": "product_id is required"}), 400
 
-    cart = USER_CARTS.setdefault(user["id"], [])
+    user_cart_doc = carts_collection.find_one({"user_id": user["id"]})
+    if not user_cart_doc:
+        carts_collection.insert_one({"user_id": user["id"], "items": []})
+        user_cart_doc = {"user_id": user["id"], "items": []}
+        
+    cart = user_cart_doc.get("items", [])
 
     # Check if product already in cart
     for item in cart:
@@ -267,6 +277,8 @@ def add_to_cart(user):
             "quantity": quantity,
             "category": category,
         })
+
+    carts_collection.update_one({"user_id": user["id"]}, {"$set": {"items": cart}})
 
     total = sum(item["price"] * item["quantity"] for item in cart)
     return jsonify({
@@ -284,7 +296,8 @@ def update_cart_item(user, product_id):
     data = request.get_json()
     quantity = data.get("quantity", 1)
 
-    cart = USER_CARTS.get(user["id"], [])
+    user_cart_doc = carts_collection.find_one({"user_id": user["id"]})
+    cart = user_cart_doc.get("items", []) if user_cart_doc else []
 
     for item in cart:
         if item["product_id"] == product_id:
@@ -293,6 +306,8 @@ def update_cart_item(user, product_id):
             else:
                 item["quantity"] = quantity
             break
+
+    carts_collection.update_one({"user_id": user["id"]}, {"$set": {"items": cart}})
 
     total = sum(item["price"] * item["quantity"] for item in cart)
     return jsonify({
@@ -306,10 +321,12 @@ def update_cart_item(user, product_id):
 @require_auth
 def remove_from_cart(user, product_id):
     """Remove an item from cart."""
-    cart = USER_CARTS.get(user["id"], [])
-    USER_CARTS[user["id"]] = [item for item in cart if item["product_id"] != product_id]
+    user_cart_doc = carts_collection.find_one({"user_id": user["id"]})
+    cart = user_cart_doc.get("items", []) if user_cart_doc else []
+    
+    cart = [item for item in cart if item["product_id"] != product_id]
+    carts_collection.update_one({"user_id": user["id"]}, {"$set": {"items": cart}})
 
-    cart = USER_CARTS[user["id"]]
     total = sum(item["price"] * item["quantity"] for item in cart)
     return jsonify({
         "items": cart,
@@ -326,7 +343,8 @@ def remove_from_cart(user, product_id):
 @require_auth
 def get_orders(user):
     """Get current user's order history."""
-    orders = USER_ORDERS.get(user["id"], [])
+    user_orders_doc = orders_collection.find_one({"user_id": user["id"]})
+    orders = user_orders_doc.get("orders", []) if user_orders_doc else []
     return jsonify({"orders": orders})
 
 
@@ -336,7 +354,8 @@ def place_order(user):
     """Place an order with Cash on Delivery."""
     data = request.get_json() or {}
 
-    cart = USER_CARTS.get(user["id"], [])
+    user_cart_doc = carts_collection.find_one({"user_id": user["id"]})
+    cart = user_cart_doc.get("items", []) if user_cart_doc else []
     if not cart:
         return jsonify({"error": "Your cart is empty"}), 400
 
@@ -365,14 +384,22 @@ def place_order(user):
         "estimated_delivery": "3-5 business days",
     }
 
-    orders = USER_ORDERS.setdefault(user["id"], [])
+    user_orders_doc = orders_collection.find_one({"user_id": user["id"]})
+    if not user_orders_doc:
+        orders_collection.insert_one({"user_id": user["id"], "orders": []})
+        user_orders_doc = {"user_id": user["id"], "orders": []}
+        
+    orders = user_orders_doc.get("orders", [])
     orders.insert(0, order)  # newest first
+    orders_collection.update_one({"user_id": user["id"]}, {"$set": {"orders": orders}})
 
     # Update user's total spent
-    user["total_spent"] = round(user["total_spent"] + total, 2)
+    new_total_spent = round(user.get("total_spent", 0.0) + total, 2)
+    users_collection.update_one({"id": user["id"]}, {"$set": {"total_spent": new_total_spent}})
+    user["total_spent"] = new_total_spent
 
     # Clear the cart
-    USER_CARTS[user["id"]] = []
+    carts_collection.update_one({"user_id": user["id"]}, {"$set": {"items": []}})
 
     return jsonify({
         "order": order,
