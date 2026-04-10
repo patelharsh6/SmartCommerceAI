@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from 'react'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
 import './App.css'
 import * as api from './api'
+import { useAuth } from './context/AuthContext'
+import LoginPage from './pages/LoginPage'
+import SignupPage from './pages/SignupPage'
+import ProfilePage from './pages/ProfilePage'
+import CartPage from './pages/CartPage'
+import CheckoutPage from './pages/CheckoutPage'
 
 /* ═══════════════════════════════════════════════════════════════
    SmartCommerceAI — Main Application
@@ -8,6 +15,22 @@ import * as api from './api'
    ═══════════════════════════════════════════════════════════════ */
 
 function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/cart" element={<CartPage />} />
+      <Route path="/checkout" element={<CheckoutPage />} />
+    </Routes>
+  )
+}
+
+function HomePage() {
+  const { user, isAuthenticated, logout, cartCount, refreshCart } = useAuth()
+  const navigate = useNavigate()
+
   // ─── State ───
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -24,6 +47,9 @@ function App() {
   const [productPrices, setProductPrices] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [addingToCart, setAddingToCart] = useState(null)
+  const [cartMessage, setCartMessage] = useState('')
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   // ─── Initial Data Load ───
   useEffect(() => {
@@ -101,16 +127,13 @@ function App() {
   const handleCategoryClick = useCallback((code, isParent = false) => {
     if (isParent) {
       if (expandedParent === code) {
-        // Clicking same parent — collapse it and show all
         setExpandedParent(null)
         setSelectedCategory(null)
       } else {
-        // Expand new parent and filter to it
         setExpandedParent(code)
         setSelectedCategory(code)
       }
     } else {
-      // Subcategory — filter directly
       setSelectedCategory(code)
     }
   }, [expandedParent])
@@ -124,15 +147,12 @@ function App() {
     setProductRecs(null)
 
     try {
-      // Record event
       if (selectedUser) {
         await api.recordEvent(selectedUser.user_id, product.product_id, 'click')
-        // Refresh session
         const sess = await api.getSession(selectedUser.user_id)
         setSession(sess)
       }
 
-      // Load pricing + recommendations in parallel
       const [pricing, recs] = await Promise.all([
         api.getPrice(product.product_id, selectedUser?.user_id),
         api.getRecommendations(product.product_id, selectedUser?.user_id)
@@ -155,6 +175,44 @@ function App() {
     setProductPricing(null)
     setProductRecs(null)
   }
+
+  // ─── Add to cart ───
+  const handleAddToCart = useCallback(async (product, price, e) => {
+    if (e) e.stopPropagation()
+
+    if (!isAuthenticated) {
+      navigate('/login')
+      return
+    }
+
+    setAddingToCart(product.product_id)
+    try {
+      await api.addToCart({
+        product_id: String(product.product_id),
+        name: product.name,
+        image: product.image,
+        price: price || product.base_price,
+        quantity: 1,
+        category: product.category,
+      })
+      await refreshCart()
+      setCartMessage(`${product.name} added to cart!`)
+      setTimeout(() => setCartMessage(''), 2500)
+    } catch (err) {
+      console.error('Add to cart failed:', err)
+    } finally {
+      setAddingToCart(null)
+    }
+  }, [isAuthenticated, navigate, refreshCart])
+
+  // ─── Close user menu on click outside ───
+  useEffect(() => {
+    const handleClickOutside = () => setUserMenuOpen(false)
+    if (userMenuOpen) {
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }
+  }, [userMenuOpen])
 
   // ─── Loading State ───
   if (loading) {
@@ -186,20 +244,77 @@ function App() {
 
   return (
     <>
+      {/* ─── CART MESSAGE TOAST ─── */}
+      {cartMessage && (
+        <div className="cart-toast animate-in" id="cart-toast">
+          <span>✅</span> {cartMessage}
+        </div>
+      )}
+
       {/* ─── NAVBAR ─── */}
       <nav className="navbar" id="navbar">
         <div className="navbar-inner">
-          <div className="navbar-brand">
+          <Link to="/" className="navbar-brand" style={{ textDecoration: 'none' }}>
             <span className="navbar-logo">🛒</span>
             <div>
               <div className="navbar-title">SmartCommerceAI</div>
             </div>
-          </div>
+          </Link>
 
+          <div className="navbar-actions">
+            <div className="navbar-status">
+              <span className="status-dot"></span>
+              System Active
+            </div>
 
-          <div className="navbar-status">
-            <span className="status-dot"></span>
-            System Active
+            {/* Cart Button */}
+            <Link to="/cart" className="navbar-cart-btn" id="navbar-cart-btn">
+              <span className="cart-icon">🛒</span>
+              {cartCount > 0 && (
+                <span className="cart-badge">{cartCount}</span>
+              )}
+            </Link>
+
+            {/* Auth Section */}
+            {isAuthenticated ? (
+              <div className="navbar-user-menu" onClick={(e) => { e.stopPropagation(); setUserMenuOpen(!userMenuOpen); }}>
+                <button className="navbar-user-btn" id="navbar-user-btn">
+                  <span className="navbar-user-avatar">{user?.avatar || '👤'}</span>
+                  <span className="navbar-user-name">{user?.name?.split(' ')[0]}</span>
+                  <span className="navbar-chevron">{userMenuOpen ? '▲' : '▼'}</span>
+                </button>
+                {userMenuOpen && (
+                  <div className="user-dropdown animate-in" id="user-dropdown">
+                    <div className="dropdown-header">
+                      <span className="dropdown-avatar">{user?.avatar || '👤'}</span>
+                      <div>
+                        <div className="dropdown-name">{user?.name}</div>
+                        <div className="dropdown-email">{user?.email}</div>
+                      </div>
+                    </div>
+                    <div className="dropdown-divider"></div>
+                    <Link to="/profile" className="dropdown-item" id="dropdown-profile">
+                      <span>👤</span> My Profile
+                    </Link>
+                    <Link to="/cart" className="dropdown-item" id="dropdown-cart">
+                      <span>🛒</span> My Cart {cartCount > 0 && `(${cartCount})`}
+                    </Link>
+                    <Link to="/profile" className="dropdown-item" id="dropdown-orders" onClick={() => {}}>
+                      <span>📦</span> My Orders
+                    </Link>
+                    <div className="dropdown-divider"></div>
+                    <button className="dropdown-item dropdown-logout" onClick={logout} id="dropdown-logout">
+                      <span>🚪</span> Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="navbar-auth-btns">
+                <Link to="/login" className="navbar-login-btn" id="navbar-login-btn">Sign In</Link>
+                <Link to="/signup" className="navbar-signup-btn" id="navbar-signup-btn">Sign Up</Link>
+              </div>
+            )}
           </div>
         </div>
       </nav>
@@ -212,6 +327,13 @@ function App() {
             Real-time dynamic pricing powered by demand analysis, competitor tracking,
             and personalized user segments — all working together seamlessly.
           </p>
+          {!isAuthenticated && (
+            <div className="hero-cta">
+              <Link to="/signup" className="hero-cta-btn" id="hero-signup-btn">
+                🚀 Get Started — It's Free
+              </Link>
+            </div>
+          )}
         </section>
 
         {/* ─── STATS BAR ─── */}
@@ -324,7 +446,7 @@ function App() {
             ))}
           </div>
 
-          {/* Subcategory Filters — shown when a parent is expanded */}
+          {/* Subcategory Filters */}
           {expandedParent && (() => {
             const parent = categories.find(c => c.code === expandedParent)
             if (!parent || !parent.subcategories || parent.subcategories.length === 0) return null
@@ -357,6 +479,7 @@ function App() {
               filteredProducts.map((product, i) => {
                 const priceData = productPrices[product.product_id]
                 const isTrending = trending.some(t => t.product_id === product.product_id)
+                const finalPrice = priceData ? priceData.final_price : product.base_price
                 return (
                   <div
                     key={product.product_id}
@@ -385,6 +508,18 @@ function App() {
                         </>
                       )}
                     </div>
+                    <button
+                      className={`add-to-cart-btn ${addingToCart === product.product_id ? 'adding' : ''}`}
+                      onClick={(e) => handleAddToCart(product, finalPrice, e)}
+                      disabled={addingToCart === product.product_id}
+                      id={`add-cart-${product.product_id}`}
+                    >
+                      {addingToCart === product.product_id ? (
+                        <><span className="btn-spinner-sm"></span> Adding...</>
+                      ) : (
+                        <>🛒 Add to Cart</>
+                      )}
+                    </button>
                   </div>
                 )
               })
@@ -448,6 +583,24 @@ function App() {
                 <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                   Stock: {selectedProduct.stock} units • ID: {selectedProduct.product_id}
                 </div>
+                {/* Add to Cart in modal */}
+                <button
+                  className={`modal-add-to-cart-btn ${addingToCart === selectedProduct.product_id ? 'adding' : ''}`}
+                  onClick={(e) => handleAddToCart(
+                    selectedProduct,
+                    productPricing ? productPricing.final_price : selectedProduct.base_price,
+                    e
+                  )}
+                  disabled={addingToCart === selectedProduct.product_id}
+                  id="modal-add-cart-btn"
+                  style={{ marginTop: 16 }}
+                >
+                  {addingToCart === selectedProduct.product_id ? (
+                    <><span className="btn-spinner-sm"></span> Adding...</>
+                  ) : (
+                    <>🛒 Add to Cart — ${productPricing ? productPricing.final_price : selectedProduct.base_price}</>
+                  )}
+                </button>
               </div>
             </div>
 

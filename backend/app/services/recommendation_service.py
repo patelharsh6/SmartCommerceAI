@@ -1,3 +1,4 @@
+
 """
 Recommendation & Pricing Service
 Loads all three trained ML models and provides real predictions.
@@ -29,7 +30,7 @@ def _data_path(filename):
 # ═══════════════════════════════════════════════════════════════
 # 1. LOAD CATEGORY RECOMMENDATION DATA
 # ═══════════════════════════════════════════════════════════════
-print("  📂 Loading category recommendation data...")
+print("  [+] Loading category recommendation data...")
 cat_data = pd.read_csv(_data_path("catrecommandprocessed_data.csv"))
 cat_model = joblib.load(_data_path("catrecommandmodel.pkl"))
 
@@ -47,7 +48,7 @@ ALL_BRANDS = sorted(cat_data['brand'].dropna().unique().tolist())
 # ═══════════════════════════════════════════════════════════════
 # 2. LOAD APRIORI ASSOCIATION RULES (Product Recommendations)
 # ═══════════════════════════════════════════════════════════════
-print("  🔗 Loading association rules...")
+print("  [+] Loading association rules...")
 apriori_rules_df = pd.read_csv(_data_path("apriori_rules.csv"))
 apriori_rules_df['antecedents'] = apriori_rules_df['antecedents'].astype(int)
 apriori_rules_df['consequents'] = apriori_rules_df['consequents'].astype(int)
@@ -71,7 +72,7 @@ for key in ASSOCIATION_MAP:
 # ═══════════════════════════════════════════════════════════════
 # 3. LOAD DYNAMIC PRICING MODEL
 # ═══════════════════════════════════════════════════════════════
-print("  💰 Loading dynamic pricing model...")
+print("  [+] Loading dynamic pricing model...")
 pricing_model = joblib.load(_data_path("model.pkl"))
 pricing_scaler = joblib.load(_data_path("scaler.pkl"))
 pricing_features = joblib.load(_data_path("features.pkl"))
@@ -87,10 +88,14 @@ for _, row in pricing_data.iterrows():
 # ═══════════════════════════════════════════════════════════════
 # 4. LOAD RAW EVENTS (for user classification)
 # ═══════════════════════════════════════════════════════════════
-print("  📊 Loading raw events data...")
-raw_events_df = pd.read_csv(_data_path("Dataset.csv"))
-raw_events_df['product_id'] = raw_events_df['product_id'].astype(int)
-raw_events_df['user_id'] = raw_events_df['user_id'].astype(int)
+print("  [+] Loading raw events data...")
+try:
+    raw_events_df = pd.read_csv(_data_path("Dataset.csv"))
+    raw_events_df['product_id'] = raw_events_df['product_id'].astype(int)
+    raw_events_df['user_id'] = raw_events_df['user_id'].astype(int)
+except FileNotFoundError:
+    print("  [WARN] Dataset.csv not found! Using empty user events dataframe.")
+    raw_events_df = pd.DataFrame(columns=['product_id', 'user_id', 'event_type', 'price'])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -112,7 +117,7 @@ def _invalidate_if_new_day():
     if _price_cache_date != today:
         _price_cache = {}
         _price_cache_date = today
-        print(f"  🔄 Price cache cleared for new day: {today}")
+        print(f"  [CACHE] Price cache cleared for new day: {today}")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -487,8 +492,8 @@ def get_product_detail(product_id):
     return format_product(product)
 
 
-print("  ✅ All models loaded successfully!")
-print(f"     📂 {len(cat_data)} products in recommendation data")
-print(f"     🔗 {len(ASSOCIATION_MAP)} products have association rules")
-print(f"     💰 {len(PRICING_LOOKUP)} products in pricing model")
-print(f"     📊 {len(ALL_CATEGORIES)} unique categories")
+print("  [OK] All models loaded successfully!")
+print(f"     -> {len(cat_data)} products in recommendation data")
+print(f"     -> {len(ASSOCIATION_MAP)} products have association rules")
+print(f"     -> {len(PRICING_LOOKUP)} products in pricing model")
+print(f"     -> {len(ALL_CATEGORIES)} unique categories")
