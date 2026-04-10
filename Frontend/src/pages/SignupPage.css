@@ -214,29 +214,41 @@
   background: var(--bg-primary);
   color: var(--text-primary);
   font-size: 14px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
-  /* Removed layout transitions, handled by framer-motion */
 }
-.premium-input-wrapper.floating-style {
-  position: relative;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--border);
-  background: var(--bg-primary);
+
+.premium-form-input.has-icon {
+  padding-left: 42px;
+}
+
+.premium-form-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+  background: var(--bg-card);
+}
+
+.premium-form-input:focus + .premium-input-icon,
+.premium-input-wrapper:focus-within .premium-input-icon {
+  color: var(--accent-primary);
+}
+
+.premium-toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: color 0.2s;
   display: flex;
   align-items: center;
+  justify-content: center;
 }
-.premium-input-wrapper.floating-style .premium-form-input {
-  border: none;
-  background: transparent;
-  padding-top: 22px;
-  padding-bottom: 6px;
-  box-shadow: none !important;
-}
-.premium-floating-label {
-  position: absolute;
-  pointer-events: none;
-  transform: translateY(-50%);
-  transform-origin: left top;
+.premium-toggle-password:hover {
+  color: var(--accent-primary);
 }
 
 /* ─── Premium OTP Input ─── */
@@ -261,10 +273,7 @@
   background: var(--bg-card);
 }
 
-.premium-otp-input.error-border {
-  border-color: var(--danger);
-  box-shadow: 0 0 0 4px var(--danger-bg);
-}
+/* Password Rules */
 .password-rules {
   margin-top: 8px;
   padding: 12px;
@@ -290,11 +299,12 @@
   margin-top: 8px;
   border-radius: var(--radius-md);
   border: none;
-  background: var(--text-primary); 
+  background: var(--text-primary); /* Apple style solid premium btn */
   color: var(--bg-primary);
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
+  transition: all 0.25s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,10 +312,16 @@
   box-shadow: var(--shadow-sm);
 }
 
+.auth-submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  opacity: 0.9;
+}
+
 .auth-submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  transform: none !important;
+  transform: none;
 }
 
 /* Spinner */
