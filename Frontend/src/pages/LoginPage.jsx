@@ -30,14 +30,14 @@ export default function LoginPage() {
             <div className="auth-container animate-in">
                 <div className="auth-header">
                     <Link to="/" className="auth-back-link">← Back to Store</Link>
-                    <div className="auth-logo">🛒</div>
+                    <div className="auth-logo"></div>
                     <h1 className="auth-title">Welcome Back</h1>
                     <p className="auth-subtitle">Sign in to your SmartCommerceAI account</p>
                 </div>
 
                 {error && (
                     <div className="auth-error" id="login-error">
-                        <span>⚠️</span> {error}
+                        <span></span> {error}
                     </div>
                 )}
 
