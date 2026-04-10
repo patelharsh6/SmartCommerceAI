@@ -24,6 +24,29 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
+  // ─── Brand Search State ───
+  const [searchQuery, setSearchQuery] = useState('')
+  const [brandRecsData, setBrandRecsData] = useState(null)
+  const [isSearching, setIsSearching] = useState(false)
+
+  // ─── Search Handler ───
+  const handleSearch = async (e) => {
+    e.preventDefault()
+    if (!searchQuery.trim()) {
+      setBrandRecsData(null)
+      return
+    }
+    setIsSearching(true)
+    try {
+      const results = await api.getBrandRecommendations(searchQuery)
+      setBrandRecsData(results)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
   // ─── Initial Data Load ───
   useEffect(() => {
     async function loadInitialData() {
@@ -258,6 +281,63 @@ function App() {
           </div>
         </section>
 
+        {/* ─── BRAND RECOMMENDATION SECTION ─── */}
+        <section className="search-section animate-in" id="search-section" style={{ background: '#fff', padding: '30px', margin: '30px 0', borderRadius: '16px', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
+          <div className="section-header" style={{ justifyContent: 'center', marginBottom: '25px' }}>
+            <div className="section-title">
+              <span className="section-icon">🔍</span> Brand Explorer
+            </div>
+          </div>
+          <form onSubmit={handleSearch} style={{ display: 'flex', gap: '10px', alignItems: 'center', justifyContent: 'center' }}>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search products (e.g., iPhone 13, Xiaomi Phone)..."
+              style={{ padding: '14px 20px', width: '100%', maxWidth: '400px', borderRadius: '12px', border: '1px solid var(--border-color, #e5e7eb)', fontSize: '16px', outline: 'none' }}
+            />
+            <button type="submit" className="category-btn active" style={{ padding: '14px 28px', fontSize: '16px', margin: 0, borderRadius: '12px' }}>
+              {isSearching ? 'Searching...' : 'Find Brands'}
+            </button>
+          </form>
+
+          {brandRecsData && (
+            <div style={{ marginTop: '40px', animation: 'fade-in 0.3s ease-out' }}>
+              <div className="section-header">
+                <div className="section-title">
+                  <span className="section-icon">🏷️</span> Match: {brandRecsData.brand || 'Try again'}
+                </div>
+                <span className="section-badge">{brandRecsData.explanation}</span>
+              </div>
+
+              {brandRecsData.recommendations?.length > 0 ? (
+                <div className="product-grid" style={{ marginTop: 20 }}>
+                  {brandRecsData.recommendations.map((product, i) => (
+                    <div
+                      key={`brand-${product.product_id}`}
+                      className="product-card animate-in"
+                      style={{ animationDelay: `${i * 0.05}s` }}
+                      onClick={() => handleProductClick(product)}
+                    >
+                      <span className="product-card-emoji">{product.image}</span>
+                      <div className="product-card-category">{product.category}</div>
+                      <div className="product-card-name">{product.name}</div>
+                      <div className="product-card-desc" style={{ color: 'var(--primary)' }}>{product.brand}</div>
+                      <div className="product-card-price">
+                        <span className="price-current">${product.base_price}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: 30, textAlign: 'center', color: 'var(--text-muted)' }}>
+                  No related products found. Please try another query!
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
         {/* ─── PRODUCT CATALOG ─── */}
         <section className="animate-in animate-in-delay-2" id="products-section">
           <div className="section-header">
@@ -277,9 +357,18 @@ function App() {
             </button>
             {categories.map(cat => (
               <button
+<<<<<<< Updated upstream
                 key={cat}
                 className={`category-btn ${selectedCategory === cat ? 'active' : ''}`}
                 onClick={() => setSelectedCategory(cat)}
+=======
+                key={cat.code}
+                className={`category-btn ${selectedCategory === cat.code ||
+                    (cat.subcategories && cat.subcategories.some(s => s.code === selectedCategory))
+                    ? 'active' : ''
+                  }`}
+                onClick={() => handleCategoryClick(cat.code, true)}
+>>>>>>> Stashed changes
               >
                 {cat}
               </button>
@@ -401,7 +490,7 @@ function App() {
                           <div className="adjustment-desc">{adj.description}</div>
                         </div>
                         <span className={`adjustment-impact ${adj.impact.startsWith('+') ? 'positive' :
-                            adj.impact.startsWith('-') ? 'negative' : 'neutral'
+                          adj.impact.startsWith('-') ? 'negative' : 'neutral'
                           }`}>
                           {adj.impact}
                         </span>

@@ -12,6 +12,7 @@ from app.services.recommendation_service import (
     recommend_by_category,
     recommend_similar_products,
     recommend_by_association,
+    recommend_by_brand,
     get_trending,
     get_dynamic_price,
     classify_user,
@@ -338,6 +339,21 @@ def api_get_recommendations(product_id):
             "products": trending_recs
         }
     })
+
+
+# ═══════════════════════════════════════════════════════════════
+# 🏷️ BRAND RECOMMENDATIONS   (GET /api/brand-recommend/<query>)
+# ═══════════════════════════════════════════════════════════════
+
+@api_bp.route("/brand-recommend/<query>", methods=["GET"])
+def api_get_brand_recommendations(query):
+    """
+    Finds the closest matching product using TF-IDF + Cosine Similarity,
+    extracts its brand, and returns all products of that same brand.
+    """
+    limit = request.args.get("limit", 10, type=int)
+    result = recommend_by_brand(query, top_n=limit)
+    return jsonify(result)
 
 
 # ═══════════════════════════════════════════════════════════════

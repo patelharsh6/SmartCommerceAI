@@ -15,7 +15,8 @@ import os
 import random
 from datetime import datetime, date
 from collections import Counter
-
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 # ═══════════════════════════════════════════════════════════════
 # PATH SETUP
 # ═══════════════════════════════════════════════════════════════
@@ -188,6 +189,82 @@ def recommend_by_association(product_id, top_n=5):
                 "lift": round(lift, 2)
             })
     return results
+
+
+# ═══════════════════════════════════════════════════════════════
+# BRAND-BASED RECOMMENDATIONS (Model 4 — TF-IDF text search)
+# ═══════════════════════════════════════════════════════════════
+
+_tfidf_vectorizer = None
+_tfidf_matrix = None
+_brand_product_lookup = None
+
+def _init_brand_model():
+    global _tfidf_vectorizer, _tfidf_matrix, _brand_product_lookup
+    print("  🏷️ Initializing brand recommendation TF-IDF model...")
+    # Drop duplicates to avoid bias
+    df = cat_data.drop_duplicates(subset=['product_id']).copy()
+    
+    # Create the search text by simulating 'name', 'brand', and 'category'
+    df['brand_lower'] = df['brand'].fillna('generic').str.lower()
+    df['cat_lower'] = df['category_code'].fillna('unknown').str.replace('.', ' ').str.lower()
+    df['name_lower'] = df['brand_lower'] + ' ' + df['cat_lower'].apply(lambda x: x.split()[-1] if isinstance(x, str) else '')
+    
+    df['text'] = df['name_lower'] + ' ' + df['brand_lower'] + ' ' + df['cat_lower']
+    
+    _brand_product_lookup = df[['product_id', 'brand_lower', 'name_lower', 'text']].copy()
+    
+    _tfidf_vectorizer = TfidfVectorizer(stop_words='english')
+    _tfidf_matrix = _tfidf_vectorizer.fit_transform(_brand_product_lookup['text'])
+
+
+def recommend_by_brand(query: str, top_n=10):
+    """
+    1. Identify the product from the query using TF-IDF + Cosine Similarity.
+    2. Extract its brand.
+    3. Return ALL products belonging to the SAME brand.
+    """
+    global _tfidf_vectorizer, _tfidf_matrix
+    if _tfidf_vectorizer is None or _tfidf_matrix is None:
+        _init_brand_model()
+        
+    query_vec = _tfidf_vectorizer.transform([query.lower()])
+    cosine_sim = cosine_similarity(query_vec, _tfidf_matrix).flatten()
+    
+    best_idx = int(np.argmax(cosine_sim))
+    best_score = float(cosine_sim[best_idx])
+    
+    if best_score < 0.1:
+        return {
+            "query": query,
+            "detected_product": None,
+            "brand": None,
+            "recommendations": [],
+            "explanation": "No matching product or brand found for the phrase."
+        }
+        
+    matched_row = _brand_product_lookup.iloc[best_idx]
+    detected_brand = matched_row['brand_lower']
+    detected_product_name = matched_row['name_lower'].title()
+    
+    # Filter products from cat_data matching the detected brand
+    brand_products = cat_data[cat_data['brand'].fillna('').str.lower() == detected_brand].copy()
+    
+    # Sort by final_score (if available and relevant, otherwise popularity)
+    brand_products = brand_products.sort_values(by='final_score', ascending=False)
+    brand_products = brand_products.drop_duplicates(subset=['product_id'])
+    
+    recs = [format_product(row) for row in brand_products.head(top_n).to_dict(orient='records')]
+    
+    brand_display = detected_brand.title() if detected_brand != 'generic' else 'Generic'
+    
+    return {
+        "query": query,
+        "detected_product": detected_product_name,
+        "brand": brand_display,
+        "recommendations": recs,
+        "explanation": f"Showing top products from {brand_display}"
+    }
 
 
 # ═══════════════════════════════════════════════════════════════

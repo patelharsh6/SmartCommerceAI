@@ -49,6 +49,10 @@ export const getTrending = (limit = 5) => {
     return fetchJSON(`${API_BASE}/trending?limit=${limit}`);
 };
 
+export const getBrandRecommendations = (query, limit = 10) => {
+    return fetchJSON(`${API_BASE}/brand-recommend/${encodeURIComponent(query)}?limit=${limit}`);
+};
+
 // ─── Dynamic Pricing ───
 export const getPrice = (productId, userId = null) => {
     if (userId) {
