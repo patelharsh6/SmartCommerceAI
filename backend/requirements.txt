@@ -33,3 +33,5 @@ joblib>=1.3.0
 # UTILITIES
 # =========================
 python-multipart>=0.0.9   # Required for file uploads
+
+gunicorn>=21.2.0
