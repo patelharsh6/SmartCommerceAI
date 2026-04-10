@@ -1,9 +1,14 @@
 # =========================
-# FASTAPI STACK
+# FLASK STACK
 # =========================
-fastapi>=0.111.0
-uvicorn>=0.30.0
-pydantic>=2.7.0
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# =========================
+# AUTHENTICATION
+# =========================
+bcrypt>=4.1.0
+PyJWT>=2.8.0
 
 # =========================
 # DATA PROCESSING
