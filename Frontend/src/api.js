@@ -81,7 +81,13 @@ export const getDashboard = () => {
  * Handles all communication between Frontend and Backend
  */
 
-const API_BASE = '/api';
+import BACKEND_URL from './config';
+
+if (!BACKEND_URL) {
+    console.warn('VITE_BACKEND_URL is not set. Backend API calls may fail.');
+}
+
+const API_BASE = `${BACKEND_URL}/api`;
 
 function getAuthHeaders() {
     const token = localStorage.getItem('smartcommerce_token');

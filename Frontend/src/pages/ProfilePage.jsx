@@ -79,11 +79,11 @@ export default function ProfilePage() {
 
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'confirmed': return '✅';
-            case 'shipped': return '🚚';
-            case 'delivered': return '📦';
-            case 'cancelled': return '❌';
-            default: return '⏳';
+            case 'confirmed': return '';
+            case 'shipped': return '';
+            case 'delivered': return '';
+            case 'cancelled': return '';
+            default: return '';
         }
     };
 
@@ -91,7 +91,7 @@ export default function ProfilePage() {
         return (
             <div className="auth-page">
                 <div className="auth-container animate-in" style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: 64, marginBottom: 16 }}>🔒</div>
+                    <div style={{ fontSize: 64, marginBottom: 16 }}></div>
                     <h2 style={{ marginBottom: 12 }}>Please sign in</h2>
                     <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
                         You need to be logged in to view your profile.
@@ -117,7 +117,7 @@ export default function ProfilePage() {
                             <p className="profile-email">{user.email}</p>
                             <div className="profile-stats-row">
                                 <div className="profile-stat">
-                                    <span className="profile-stat-value">${user.total_spent?.toFixed(2) || '0.00'}</span>
+                                    <span className="profile-stat-value">₹{user.total_spent?.toFixed(2) || '0.00'}</span>
                                     <span className="profile-stat-label">Total Spent</span>
                                 </div>
                                 <div className="profile-stat">
@@ -142,20 +142,20 @@ export default function ProfilePage() {
                         onClick={() => setActiveTab('profile')}
                         id="tab-profile"
                     >
-                        👤 Profile
+                        Profile
                     </button>
                     <button
                         className={`profile-tab ${activeTab === 'orders' ? 'active' : ''}`}
                         onClick={() => setActiveTab('orders')}
                         id="tab-orders"
                     >
-                        📦 Orders
+                        Orders
                     </button>
                 </div>
 
                 {/* Messages */}
                 {message && <div className="auth-success">{message}</div>}
-                {error && <div className="auth-error"><span>⚠️</span> {error}</div>}
+                {error && <div className="auth-error"><span></span> {error}</div>}
 
                 {/* Profile Tab */}
                 {activeTab === 'profile' && (
@@ -165,12 +165,12 @@ export default function ProfilePage() {
                                 <h3>Personal Information</h3>
                                 {!editing ? (
                                     <button className="profile-edit-btn" onClick={() => setEditing(true)} id="edit-profile-btn">
-                                        ✏️ Edit
+                                        Edit
                                     </button>
                                 ) : (
                                     <div style={{ display: 'flex', gap: 8 }}>
                                         <button className="profile-save-btn" onClick={handleSave} id="save-profile-btn">
-                                            💾 Save
+                                            Save
                                         </button>
                                         <button className="profile-cancel-btn" onClick={() => {
                                             setEditing(false);
@@ -266,7 +266,7 @@ export default function ProfilePage() {
                                 <h3>Account Actions</h3>
                             </div>
                             <button className="profile-logout-btn" onClick={logout} id="logout-btn">
-                                🚪 Sign Out
+                                Sign Out
                             </button>
                         </div>
                     </div>
@@ -282,7 +282,7 @@ export default function ProfilePage() {
                             </div>
                         ) : orders.length === 0 ? (
                             <div className="empty-state">
-                                <div className="empty-state-icon">🛍️</div>
+                                <div className="empty-state-icon"></div>
                                 <h3>No orders yet</h3>
                                 <p>Start shopping and your orders will appear here!</p>
                                 <Link to="/" className="auth-submit-btn" style={{ display: 'inline-block', textDecoration: 'none', marginTop: 16 }}>
@@ -311,19 +311,19 @@ export default function ProfilePage() {
                                                         <div className="order-item-name">{item.name}</div>
                                                         <div className="order-item-qty">Qty: {item.quantity}</div>
                                                     </div>
-                                                    <div className="order-item-price">${(item.price * item.quantity).toFixed(2)}</div>
+                                                    <div className="order-item-price">₹{(item.price * item.quantity).toFixed(2)}</div>
                                                 </div>
                                             ))}
                                         </div>
 
                                         <div className="order-footer">
                                             <div className="order-meta">
-                                                <span>💳 {order.payment_method}</span>
-                                                <span>📍 {order.delivery_address}</span>
-                                                <span>📅 {new Date(order.created_at).toLocaleDateString()}</span>
+                                                <span>Payment: {order.payment_method}</span>
+                                                <span>Address: {order.delivery_address}</span>
+                                                <span>Date: {new Date(order.created_at).toLocaleDateString()}</span>
                                             </div>
                                             <div className="order-total">
-                                                Total: <strong>${order.total.toFixed(2)}</strong>
+                                                Total: <strong>₹{order.total.toFixed(2)}</strong>
                                             </div>
                                         </div>
                                     </div>
