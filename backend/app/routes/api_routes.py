@@ -108,16 +108,53 @@ def api_get_products():
     category = request.args.get("category", None)
 
     if category:
-        products = get_products_by_category(category, n=20)
-    else:
-        products = get_top_products(n=20)
+        # Support both exact match and prefix match (parent category)
+        exact = cat_data[cat_data['category_code'] == category]
+        if len(exact) > 0:
+            products = get_products_by_category(category, n=20)
+        else:
+            # Prefix match for parent categories like "electronics"
+            matched = cat_data[cat_data['category_code'].str.startswith(category + '.')]
+            sub_codes = matched['category_code'].unique()
+            products = []
+            for sc in sub_codes:
+                products.extend(get_products_by_category(sc, n=3))
+            # Sort by final_score and take top 20
+            products = sorted(products, key=lambda x: x.get('final_score', 0), reverse=True)[:20]
 
-    # Human-readable category list
-    categories = [_format_category_name(c) for c in ALL_CATEGORIES[:15]]
+        # If still no products, fall back to unfiltered
+        if not products:
+            products = get_top_products(n=40)
+    else:
+        products = get_top_products(n=40)
+
+    # Build grouped categories: top-level parents WITH subcategories
+    from collections import OrderedDict
+    parent_groups = OrderedDict()
+    for c in ALL_CATEGORIES:
+        parts = c.split('.')
+        parent = parts[0]
+        if parent not in parent_groups:
+            parent_groups[parent] = []
+        parent_groups[parent].append({
+            "code": c,
+            "name": _format_category_name(c)
+        })
+
+    categories = [
+        {
+            "code": parent,
+            "name": parent.replace('_', ' ').title(),
+            "count": len(subs),
+            "subcategories": subs
+        }
+        for parent, subs in parent_groups.items()
+    ]
 
     return jsonify({
         "products": products,
-        "categories": categories
+        "categories": categories,
+        "total": len(products)
     })
 
 
