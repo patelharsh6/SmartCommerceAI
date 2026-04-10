@@ -262,10 +262,7 @@ function HomePage() {
           </Link>
 
           <div className="navbar-actions">
-            <div className="navbar-status">
-              <span className="status-dot"></span>
-              System Active
-            </div>
+
 
             {/* Cart Button */}
             <Link to="/cart" className="navbar-cart-btn" id="navbar-cart-btn">
