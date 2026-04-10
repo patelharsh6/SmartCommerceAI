@@ -8,7 +8,6 @@ import SignupPage from './pages/SignupPage'
 import ProfilePage from './pages/ProfilePage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
-import ForgotPasswordPage from './pages/ForgotPasswordPage'
 
 /* ═══════════════════════════════════════════════════════════════
    SmartCommerceAI — Main Application
@@ -26,7 +25,6 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/profile" element={<ProfilePage />} />
       <Route path="/cart" element={<CartPage />} />
       <Route path="/checkout" element={<CheckoutPage />} />
@@ -59,6 +57,50 @@ function HomePage() {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
+  // ─── Catalog State (product_catalog.csv) ───
+  const [catalogProducts, setCatalogProducts] = useState([])
+  const [catalogPage, setCatalogPage] = useState(1)
+  const [catalogHasMore, setCatalogHasMore] = useState(true)
+  const [catalogLoading, setCatalogLoading] = useState(false)
+  const [catalogTotal, setCatalogTotal] = useState(0)
+  const [catalogCategories, setCatalogCategories] = useState([])
+  const [selectedCatFilter, setSelectedCatFilter] = useState('')
+  const [selectedSubcatFilter, setSelectedSubcatFilter] = useState('')
+  const CATALOG_PAGE_SIZE = 20
+
+  // ─── Load catalog products (paginated from product_catalog.csv) ───
+  const loadCatalog = useCallback(async (page = 1, append = false) => {
+    setCatalogLoading(true)
+    try {
+      const data = await api.getCatalog(
+        page,
+        CATALOG_PAGE_SIZE,
+        selectedCatFilter || null,
+        selectedSubcatFilter || null,
+        searchQuery || null
+      )
+      if (append) {
+        setCatalogProducts(prev => [...prev, ...data.products])
+      } else {
+        setCatalogProducts(data.products)
+      }
+      setCatalogPage(data.page)
+      setCatalogHasMore(data.has_more)
+      setCatalogTotal(data.total)
+      if (data.categories) setCatalogCategories(data.categories)
+    } catch (err) {
+      console.error('Error loading catalog:', err)
+    } finally {
+      setCatalogLoading(false)
+    }
+  }, [selectedCatFilter, selectedSubcatFilter, searchQuery])
+
+  const loadMoreCatalog = useCallback(() => {
+    if (catalogHasMore && !catalogLoading) {
+      loadCatalog(catalogPage + 1, true)
+    }
+  }, [catalogHasMore, catalogLoading, catalogPage, loadCatalog])
+
   // ─── Initial Data Load ───
   useEffect(() => {
     async function loadInitialData() {
@@ -90,6 +132,11 @@ function HomePage() {
     loadInitialData()
   }, [])
 
+  // ─── Load catalog on mount and when filters change ───
+  useEffect(() => {
+    loadCatalog(1, false)
+  }, [loadCatalog])
+
   // ─── Load prices for all products when user changes ───
   useEffect(() => {
     if (!selectedUser || products.length === 0) return
@@ -116,7 +163,7 @@ function HomePage() {
       .catch(() => setSession(null))
   }, [selectedUser])
 
-  // ─── Load products when category changes ───
+  // ─── Load products when sidebar category changes ───
   useEffect(() => {
     async function loadCategoryProducts() {
       try {
@@ -130,6 +177,18 @@ function HomePage() {
     }
     loadCategoryProducts()
   }, [selectedCategory])
+
+  // ─── Handle catalog category filter change ───
+  const handleCatFilterChange = useCallback((cat) => {
+    setSelectedCatFilter(cat)
+    setSelectedSubcatFilter('')
+    setCatalogPage(1)
+  }, [])
+
+  const handleSubcatFilterChange = useCallback((sub) => {
+    setSelectedSubcatFilter(sub)
+    setCatalogPage(1)
+  }, [])
 
   // ─── Handle category click ───
   const handleCategoryClick = useCallback((code, isParent = false) => {
@@ -434,35 +493,110 @@ function HomePage() {
           </div>
         </section>
 
-        {/* ─── PRODUCT CATALOG ─── */}
+        {/* ─── PRODUCT CATALOG (from product_catalog.csv) ─── */}
         <section className="animate-in animate-in-delay-2" id="products-section">
           <div className="section-header">
             <div className="section-title">
               Product Catalog
             </div>
-            <span className="section-badge">{filteredProducts.length} items</span>
+            <span className="section-badge">{catalogTotal.toLocaleString()} items</span>
+          </div>
+
+          {/* Category Filter Bar */}
+          <div className="catalog-filter-bar" id="catalog-filter-bar">
+            <select
+              className="catalog-filter-select"
+              value={selectedCatFilter}
+              onChange={(e) => handleCatFilterChange(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              {catalogCategories.map(cat => (
+                <option key={cat.name} value={cat.name}>{cat.name}</option>
+              ))}
+            </select>
+            {selectedCatFilter && (
+              <select
+                className="catalog-filter-select"
+                value={selectedSubcatFilter}
+                onChange={(e) => handleSubcatFilterChange(e.target.value)}
+              >
+                <option value="">All Subcategories</option>
+                {(catalogCategories.find(c => c.name === selectedCatFilter)?.subcategories || []).map(sub => (
+                  <option key={sub} value={sub}>{sub}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           {/* Product Grid */}
           <div className="product-grid" id="product-grid">
-            {filteredProducts.length > 0 ? (
-              filteredProducts.map((product, i) => {
-                const priceData = productPrices[product.product_id]
-                const isTrending = trending.some(t => t.product_id === product.product_id)
-                const finalPrice = priceData ? priceData.final_price : product.base_price
-                return (
-                  <ProductCard
-                    key={product.product_id}
-                    product={product}
-                    priceData={priceData}
-                    isTrending={isTrending}
-                    onClick={handleProductClick}
-                    onAddToCart={handleAddToCart}
-                    addingToCart={addingToCart}
-                    animationDelay={i * 0.05}
-                  />
-                )
-              })
+            {catalogProducts.length > 0 ? (
+              catalogProducts.map((product, i) => (
+                <div
+                  key={product.product_id}
+                  className="product-card animate-in premium-card"
+                  style={{ animationDelay: `${Math.min(i, 19) * 0.04}s` }}
+                  onClick={() => handleProductClick(product)}
+                  id={`product-${product.product_id}`}
+                >
+                  {/* Product Image from img_url */}
+                  <div className="product-card-image-wrapper">
+                    <img
+                      src={product.img_url || product.image}
+                      alt={product.name}
+                      className="product-card-image loaded"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.onerror = null
+                        e.target.src = `https://source.unsplash.com/400x400/?${encodeURIComponent(product.subcategory || product.category)},product`
+                      }}
+                    />
+                  </div>
+
+                  <div className="product-card-content">
+                    <div className="product-card-category">{product.subcategory || product.category}</div>
+                    <div className="product-card-name">{product.name}</div>
+
+                    {/* Rating */}
+                    {product.avg_rating && (
+                      <div className="product-card-rating">
+                        <span className="rating-stars">
+                          {'★'.repeat(Math.round(product.avg_rating))}
+                          {'☆'.repeat(5 - Math.round(product.avg_rating))}
+                        </span>
+                        <span className="rating-value">{product.avg_rating}</span>
+                        <span className="rating-count">({product.review_count?.toLocaleString()})</span>
+                      </div>
+                    )}
+
+                    <div className="product-card-footer">
+                      <div className="product-card-price">
+                        <span className="price-current">₹{product.base_price}</span>
+                        {product.original_price && product.original_price > product.base_price && (
+                          <div className="price-savings-row">
+                            <span className="price-base">₹{product.original_price}</span>
+                            <span className="price-badge savings">
+                              Save {Math.round(((product.original_price - product.base_price) / product.original_price) * 100)}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <button
+                      className={`premium-cart-btn ${addingToCart === product.product_id ? 'adding' : ''}`}
+                      onClick={(e) => handleAddToCart(product, product.base_price, e)}
+                      disabled={addingToCart === product.product_id}
+                    >
+                      {addingToCart === product.product_id ? (
+                        <><span className="btn-spinner-sm"></span> Adding...</>
+                      ) : (
+                        <>Add to Cart</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ))
             ) : (
               <div style={{
                 gridColumn: '1 / -1',
@@ -478,8 +612,9 @@ function HomePage() {
                 <button
                   className="category-btn active"
                   onClick={() => {
-                    setSelectedCategory(null)
-                    setExpandedParent(null)
+                    setSelectedCatFilter('')
+                    setSelectedSubcatFilter('')
+                    setSearchQuery('')
                   }}
                 >
                   Show All Products
@@ -487,6 +622,31 @@ function HomePage() {
               </div>
             )}
           </div>
+
+          {/* Load More Button */}
+          {catalogHasMore && catalogProducts.length > 0 && (
+            <div className="load-more-container" id="load-more-container">
+              <button
+                className="load-more-btn"
+                onClick={loadMoreCatalog}
+                disabled={catalogLoading}
+                id="load-more-btn"
+              >
+                {catalogLoading ? (
+                  <><span className="btn-spinner-sm"></span> Loading more products...</>
+                ) : (
+                  <>Load More Products <span className="load-more-count">({catalogProducts.length} of {catalogTotal.toLocaleString()})</span></>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* All loaded indicator */}
+          {!catalogHasMore && catalogProducts.length > 0 && (
+            <div className="all-loaded-indicator">
+              ✅ All {catalogTotal.toLocaleString()} products loaded
+            </div>
+          )}
         </section>
       </main>
       </div>
@@ -517,7 +677,7 @@ function HomePage() {
 
             {/* Header */}
             <div className="detail-header">
-              <div className="detail-image" style={{ width: '140px', height: '140px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}><img src={getImageForProduct(selectedProduct)} alt={selectedProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
+              <div className="detail-image" style={{ width: '140px', height: '140px', borderRadius: '12px', overflow: 'hidden', flexShrink: 0 }}><img src={selectedProduct.img_url || getImageForProduct(selectedProduct)} alt={selectedProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /></div>
               <div className="detail-info">
                 <div className="detail-category">{selectedProduct.category}</div>
                 <h2 className="detail-name">{selectedProduct.name}</h2>
