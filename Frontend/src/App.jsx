@@ -14,10 +14,18 @@ import CheckoutPage from './pages/CheckoutPage'
    E-Commerce Dynamic Pricing & Recommendation System
    ═══════════════════════════════════════════════════════════════ */
 
-import { getImageForProduct } from './utils'
-import SearchBar from './components/SearchBar'
-import Sidebar from './components/Sidebar'
-import ProductCard from './components/ProductCard'
+import { Navigate } from 'react-router-dom';
+import { getImageForProduct } from './utils';
+import SearchBar from './components/SearchBar';
+import Sidebar from './components/Sidebar';
+import ProductCard from './components/ProductCard';
+
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><div className="loading-spinner"></div></div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+};
 
 function App() {
   return (
@@ -25,9 +33,9 @@ function App() {
       <Route path="/" element={<HomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-      <Route path="/cart" element={<CartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} />
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+      <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
     </Routes>
   )
 }
