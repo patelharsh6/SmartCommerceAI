@@ -332,12 +332,7 @@ function HomePage() {
             </div>
           </Link>
 
-          <SearchBar
-            products={products}
-            onSelectProduct={handleProductClick}
-            searchQuery={searchQuery}
-            setSearchQuery={(q) => { setSearchQuery(q); setCatalogSearch(q); }}
-          />
+
 
           <div className="navbar-actions">
             {/* Cart Button */}
