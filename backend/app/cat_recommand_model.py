@@ -1,98 +1,76 @@
 import pandas as pd
 import numpy as np
-import joblib
-import os
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LinearRegression
+import ast
+import pickle
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.linear_model import Ridge
 
 # =========================
-# 1. LOAD DATA
+# LOAD DATA
 # =========================
-DATA_PATH = "./data/Dataset.csv"
-if not os.path.exists(DATA_PATH):
-    raise FileNotFoundError(f"Please place {DATA_PATH} in the root directory.")
+df = pd.read_csv('data/product_catalog.csv')
 
-df = pd.read_csv(DATA_PATH)
+# Drop useless column
+df.drop(['restock_days'], axis=1, inplace=True)
 
-# =========================
-# 2. PREPROCESSING
-# =========================
-# Standardize types and clean price
-df['event_time'] = pd.to_datetime(df['event_time'])
-df['category_code'] = df['category_code'].fillna('unknown').astype(str)
-df = df[df['price'] > 0]
-df = df.dropna(subset=['product_id', 'event_type'])
+# Date
+df['launch_date'] = pd.to_datetime(df['launch_date'], format='%d/%m/%y', errors='coerce')
+df['launch_year'] = df['launch_date'].dt.year
+df['launch_year'] = df['launch_year'].fillna(df['launch_year'].median()).fillna(0)
+df.drop(['launch_date'], axis=1, inplace=True)
 
-# Event scoring
-event_weight = {"view": 1, "cart": 3, "purchase": 5}
-df['event_score'] = df['event_type'].map(event_weight).fillna(1)
+# Boolean
+df['is_active'] = df['is_active'].map({'TRUE': 1, 'FALSE': 0, True: 1, False: 0}).fillna(0)
 
-# =========================
-# 3. FEATURE ENGINEERING
-# =========================
-# Calculate Popularity (Target variable)
-popularity_df = df.groupby(['product_id'])['event_score'].sum().reset_index()
-popularity_df.rename(columns={'event_score': 'popularity'}, inplace=True)
+# Tags
+def count_tags(x):
+    try:
+        return len(ast.literal_eval(x))
+    except:
+        return 0
 
-# Product Info (Features)
-product_info = df.groupby('product_id').agg({
-    'category_code': 'first',
-    'brand': 'first',
-    'price': 'mean'
-}).reset_index()
+df['tags_count'] = df['tags'].apply(count_tags)
 
-# Interaction count (Proxy for brand strength/visibility)
-brand_stats = df.groupby('product_id').agg({'brand': 'count'}).reset_index()
-brand_stats.rename(columns={'brand': 'interaction_count'}, inplace=True)
+# Feature Engineering
+df['price_margin'] = df['base_price_usd'] - df['cost_price_usd']
+df['inventory_value'] = df['inventory_count'] * df['cost_price_usd']
+df['rating_weighted'] = df['avg_rating'] * df['review_count']
 
-# =========================
-# 4. MERGE & CLEAN
-# =========================
-data = pd.merge(popularity_df, product_info, on='product_id', how='left')
-data = pd.merge(data, brand_stats, on='product_id', how='left')
+# Encoding
+cat_cols = ['category', 'subcategory', 'brand']
+encoders = {}
 
-# Final Data Cleaning
-data = data.drop_duplicates(subset=['product_id'])
-data['brand'] = data['brand'].fillna('generic')
+for col in cat_cols:
+    df[col] = df[col].fillna("Unknown")
+    le = LabelEncoder()
+    df[col] = le.fit_transform(df[col])
+    encoders[col] = le
 
-# =========================
-# 5. TRAIN MODEL
-# =========================
-# Using interaction_count and price to predict popularity
-X = data[['price', 'interaction_count']]
-y = data['popularity']
+# Features
+X = df.drop([
+    'sku_id','product_name','tags','current_price_usd',
+    'base_price_usd','min_price_usd','max_price_usd'
+], axis=1)
 
-model = Pipeline([
-    ('poly', PolynomialFeatures(degree=2)),
-    ('linear', LinearRegression())
-])
+y = df['current_price_usd']
 
-model.fit(X, y)
+X = X.fillna(X.median(numeric_only=True)).fillna(0)
+
+# Scaling
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+# Train model
+model = Ridge(alpha=10)
+model.fit(X_scaled, y)
 
 # =========================
-# 6. HYBRID SCORING
+# SAVE FILES
 # =========================
-# Add prediction to dataframe
-data['predicted_score'] = model.predict(X)
+pickle.dump(model, open("data/ridge_model.pkl", "wb"))
+pickle.dump(scaler, open("data/scaler.pkl", "wb"))
+pickle.dump(encoders, open("data/encoders.pkl", "wb"))
 
-# Hybrid score: Balance between real history (popularity) and predicted potential
-# We normalize them slightly to ensure they are on a similar scale
-data['final_score'] = (
-    (0.6 * data['predicted_score']) + 
-    (0.4 * data['popularity'])
-)
-
-# =========================
-# 7. SAVE FOR FLASK
-# =========================
-# Ensure data folder exists
-if not os.path.exists('data'):
-    os.makedirs('data')
-
-joblib.dump(model, "data/catrecommandmodel.pkl")
-data.to_csv("data/catrecommandprocessed_data.csv", index=False)
-
-print("✅ Training Complete.")
-print(f"✅ Processed {len(data)} unique products.")
-print("✅ Saved: data/catrecommandmodel.pkl & data/catrecommandprocessed_data.csv")
+print("✅ Model files saved in /data folder")
