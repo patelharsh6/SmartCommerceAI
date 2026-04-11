@@ -5,26 +5,14 @@
 
 const API_BASE = '/api';
 
-function getAuthHeaders() {
-    const token = localStorage.getItem('smartcommerce_token');
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    return headers;
-}
-
 async function fetchJSON(url, options = {}) {
     try {
         const response = await fetch(url, {
-            headers: getAuthHeaders(),
+            headers: { 'Content-Type': 'application/json' },
             ...options,
         });
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const error = new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
-            error.status = response.status;
-            throw error;
+            throw new Error(`API Error: ${response.status} ${response.statusText}`);
         }
         return await response.json();
     } catch (error) {
@@ -32,69 +20,6 @@ async function fetchJSON(url, options = {}) {
         throw error;
     }
 }
-
-// ─── Auth APIs ───
-export const signup = (name, email, password, phone = '', address = '') => {
-    return fetchJSON(`${API_BASE}/auth/signup`, {
-        method: 'POST',
-        body: JSON.stringify({ name, email, password, phone, address }),
-    });
-};
-
-export const login = (email, password) => {
-    return fetchJSON(`${API_BASE}/auth/login`, {
-        method: 'POST',
-        body: JSON.stringify({ email, password }),
-    });
-};
-
-export const getProfile = () => {
-    return fetchJSON(`${API_BASE}/auth/profile`);
-};
-
-export const updateProfile = (data) => {
-    return fetchJSON(`${API_BASE}/auth/profile`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-    });
-};
-
-// ─── Cart APIs ───
-export const getCart = () => {
-    return fetchJSON(`${API_BASE}/auth/cart`);
-};
-
-export const addToCart = (product) => {
-    return fetchJSON(`${API_BASE}/auth/cart`, {
-        method: 'POST',
-        body: JSON.stringify(product),
-    });
-};
-
-export const updateCartItem = (productId, quantity) => {
-    return fetchJSON(`${API_BASE}/auth/cart/${productId}`, {
-        method: 'PUT',
-        body: JSON.stringify({ quantity }),
-    });
-};
-
-export const removeFromCart = (productId) => {
-    return fetchJSON(`${API_BASE}/auth/cart/${productId}`, {
-        method: 'DELETE',
-    });
-};
-
-// ─── Order APIs ───
-export const getOrders = () => {
-    return fetchJSON(`${API_BASE}/auth/orders`);
-};
-
-export const placeOrder = (address = '', phone = '') => {
-    return fetchJSON(`${API_BASE}/auth/orders`, {
-        method: 'POST',
-        body: JSON.stringify({ address, phone }),
-    });
-};
 
 // ─── Product APIs ───
 export const getProducts = (category = null) => {
@@ -122,6 +47,10 @@ export const getRecommendations = (productId, userId = null) => {
 
 export const getTrending = (limit = 5) => {
     return fetchJSON(`${API_BASE}/trending?limit=${limit}`);
+};
+
+export const getBrandRecommendations = (query, limit = 10) => {
+    return fetchJSON(`${API_BASE}/brand-recommend/${encodeURIComponent(query)}?limit=${limit}`);
 };
 
 // ─── Dynamic Pricing ───
