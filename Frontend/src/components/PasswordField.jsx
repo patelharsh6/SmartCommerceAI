@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -10,22 +10,25 @@ export default function PasswordField({ label = "Password", wrapperClass = "", v
 
     return (
         <div className={`premium-form-group ${wrapperClass}`}>
-            <motion.div 
+            <motion.div
                 className="premium-input-wrapper floating-style"
-                animate={isFocused ? { boxShadow: "0 0 0 4px var(--accent-glow)", borderColor: "var(--accent-primary)" } : {}}
+                animate={isFocused
+                    ? { boxShadow: "0 0 0 4px var(--accent-glow)", borderColor: "var(--accent-primary)" }
+                    : { boxShadow: "none" }
+                }
             >
-                <motion.div 
+                <motion.div
                     className="premium-input-icon"
                     animate={{ color: isFocused ? "var(--accent-primary)" : "var(--text-muted)" }}
                 >
                     <Lock size={18} />
                 </motion.div>
-                
-                <motion.label 
+
+                <motion.label
                     className="premium-floating-label"
                     initial={{ top: '50%', y: '-50%', fontSize: '14px' }}
-                    animate={{ 
-                        top: isActive ? '8px' : '50%', 
+                    animate={{
+                        top: isActive ? '8px' : '50%',
                         y: isActive ? '0%' : '-50%',
                         fontSize: isActive ? '11px' : '14px',
                         color: isActive ? "var(--accent-primary)" : "var(--text-muted)",
@@ -36,14 +39,14 @@ export default function PasswordField({ label = "Password", wrapperClass = "", v
                 >
                     {label}
                 </motion.label>
-                
-                <input 
+
+                <input
                     type={show ? 'text' : 'password'}
-                    className="premium-form-input floating-input has-icon" 
+                    className="premium-form-input floating-input has-icon"
                     value={value}
                     onFocus={() => setIsFocused(true)}
                     onBlur={() => setIsFocused(false)}
-                    {...props} 
+                    {...props}
                 />
 
                 <motion.button
