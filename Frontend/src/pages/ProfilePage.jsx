@@ -117,7 +117,7 @@ export default function ProfilePage() {
                             <p className="profile-email">{user.email}</p>
                             <div className="profile-stats-row">
                                 <div className="profile-stat">
-                                    <span className="profile-stat-value">₹{user.total_spent?.toFixed(2) || '0.00'}</span>
+                                    <span className="profile-stat-value">${user.total_spent?.toFixed(2) || '0.00'}</span>
                                     <span className="profile-stat-label">Total Spent</span>
                                 </div>
                                 <div className="profile-stat">
@@ -311,7 +311,7 @@ export default function ProfilePage() {
                                                         <div className="order-item-name">{item.name}</div>
                                                         <div className="order-item-qty">Qty: {item.quantity}</div>
                                                     </div>
-                                                    <div className="order-item-price">₹{(item.price * item.quantity).toFixed(2)}</div>
+                                                    <div className="order-item-price">${(item.price * item.quantity).toFixed(2)}</div>
                                                 </div>
                                             ))}
                                         </div>
@@ -323,7 +323,7 @@ export default function ProfilePage() {
                                                 <span>Date: {new Date(order.created_at).toLocaleDateString()}</span>
                                             </div>
                                             <div className="order-total">
-                                                Total: <strong>₹{order.total.toFixed(2)}</strong>
+                                                Total: <strong>${order.total.toFixed(2)}</strong>
                                             </div>
                                         </div>
                                     </div>

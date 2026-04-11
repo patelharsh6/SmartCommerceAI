@@ -115,7 +115,7 @@ export default function CartPage() {
                                     <div className="cart-item-details">
                                         <div className="cart-item-name">{item.name}</div>
                                         <div className="cart-item-category">{item.category}</div>
-                                        <div className="cart-item-unit-price">₹{item.price.toFixed(2)} each</div>
+                                        <div className="cart-item-unit-price">${item.price.toFixed(2)} each</div>
                                     </div>
                                     <div className="cart-item-controls">
                                         <div className="quantity-control">
@@ -135,7 +135,7 @@ export default function CartPage() {
                                                 +
                                             </button>
                                         </div>
-                                        <div className="cart-item-total">₹{(item.price * item.quantity).toFixed(2)}</div>
+                                        <div className="cart-item-total">${(item.price * item.quantity).toFixed(2)}</div>
                                         <button
                                             className="cart-remove-btn"
                                             onClick={() => handleRemove(item.product_id)}
@@ -154,7 +154,7 @@ export default function CartPage() {
                                 <h3 className="cart-summary-title">Order Summary</h3>
                                 <div className="cart-summary-row">
                                     <span>Subtotal ({cart.item_count} items)</span>
-                                    <span>₹{cart.total.toFixed(2)}</span>
+                                    <span>${cart.total.toFixed(2)}</span>
                                 </div>
                                 <div className="cart-summary-row">
                                     <span>Shipping</span>
@@ -167,7 +167,7 @@ export default function CartPage() {
                                 <div className="cart-summary-divider"></div>
                                 <div className="cart-summary-row cart-summary-total">
                                     <span>Total</span>
-                                    <span>₹{cart.total.toFixed(2)}</span>
+                                    <span>${cart.total.toFixed(2)}</span>
                                 </div>
                                 <button
                                     className="checkout-btn"

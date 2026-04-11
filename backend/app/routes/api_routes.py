@@ -168,6 +168,127 @@ def api_get_product(product_id):
 
 
 # ═══════════════════════════════════════════════════════════════
+# 🛍️ PRODUCT CATALOG   (GET /api/catalog)
+# ═══════════════════════════════════════════════════════════════
+
+import pandas as pd
+import os as _os
+
+_CATALOG_CSV = _os.path.join(
+    _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))),
+    "data",
+    "product_catalog.csv",
+)
+
+try:
+    _catalog_df = pd.read_csv(_CATALOG_CSV)
+    # Only keep active products
+    if "is_active" in _catalog_df.columns:
+        _catalog_df = _catalog_df[_catalog_df["is_active"] == True].reset_index(drop=True)
+except Exception as e:
+    print(f"Error loading catalog CSV: {e}")
+    _catalog_df = pd.DataFrame()
+
+# Build unique category / subcategory lists once
+_catalog_categories = []
+_catalog_subcategories = {}
+if not _catalog_df.empty and "category" in _catalog_df.columns:
+    _catalog_categories = sorted(_catalog_df["category"].dropna().unique().tolist())
+    if "subcategory" in _catalog_df.columns:
+        for cat in _catalog_categories:
+            subs = sorted(
+                _catalog_df[_catalog_df["category"] == cat]["subcategory"]
+                .dropna()
+                .unique()
+                .tolist()
+            )
+            _catalog_subcategories[cat] = subs
+
+
+@api_bp.route("/catalog", methods=["GET"])
+def api_get_catalog():
+    """
+    Paginated product catalog from product_catalog.csv.
+    Query params:
+        page   (int, default 1)
+        limit  (int, default 20)
+        category     (str, optional)
+        subcategory  (str, optional)
+        search       (str, optional)
+    """
+    if _catalog_df.empty:
+        return jsonify({"products": [], "total": 0, "page": 1, "has_more": False})
+
+    page = request.args.get("page", 1, type=int)
+    limit = request.args.get("limit", 20, type=int)
+    category = request.args.get("category", None)
+    subcategory = request.args.get("subcategory", None)
+    search = request.args.get("search", None)
+
+    df = _catalog_df.copy()
+
+    # Filter by category / subcategory
+    if category and "category" in df.columns:
+        df = df[df["category"].str.lower() == category.lower()]
+    if subcategory and "subcategory" in df.columns:
+        df = df[df["subcategory"].str.lower() == subcategory.lower()]
+    if search:
+        q = search.lower()
+        search_mask = pd.Series([False]*len(df), index=df.index)
+        
+        if "product_name" in df.columns:
+            search_mask |= df["product_name"].astype(str).str.lower().str.contains(q, na=False)
+        if "brand" in df.columns:
+            search_mask |= df["brand"].astype(str).str.lower().str.contains(q, na=False)
+        if "category" in df.columns:
+            search_mask |= df["category"].astype(str).str.lower().str.contains(q, na=False)
+            
+        df = df[search_mask]
+
+    total = len(df)
+    total_pages = max(1, -(-total // limit))  # ceil division
+
+    start = (page - 1) * limit
+    end = start + limit
+    page_df = df.iloc[start:end]
+
+    products = []
+    for _, row in page_df.iterrows():
+        products.append({
+            "product_id": row.get("sku_id", ""),
+            "name": row.get("product_name", ""),
+            "category": row.get("category", ""),
+            "subcategory": row.get("subcategory", ""),
+            "brand": row.get("brand", ""),
+            "base_price": round(float(row.get("current_price_usd", row.get("base_price_usd", 0))), 2),
+            "original_price": round(float(row.get("base_price_usd", 0)), 2),
+            "image": row.get("image_url", ""),
+            "img_url": row.get("image_url", ""),
+            "image_url": row.get("image_url", ""),
+            "avg_rating": float(row.get("avg_rating", 0)) if pd.notna(row.get("avg_rating")) else None,
+            "review_count": int(row.get("review_count", 0)) if pd.notna(row.get("review_count")) else 0,
+            "stock": int(row.get("inventory_count", 0)) if pd.notna(row.get("inventory_count")) else 0,
+            "description": f"{row.get('brand', '')} {row.get('subcategory', '')}",
+        })
+
+    return jsonify({
+        "products": products,
+        "page": page,
+        "limit": limit,
+        "total": total,
+        "total_pages": total_pages,
+        "has_more": page < total_pages,
+        "categories": [
+            {
+                "name": cat,
+                "subcategories": _catalog_subcategories.get(cat, []),
+            }
+            for cat in _catalog_categories
+        ],
+    })
+
+
+# ═══════════════════════════════════════════════════════════════
 # 👤 USERS   (GET /api/users)
 # ═══════════════════════════════════════════════════════════════
 
