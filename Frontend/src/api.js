@@ -3,12 +3,19 @@
  * Handles all communication between Frontend and Backend
  */
 
-const API_BASE = '/api';
+import BACKEND_URL from './config';  // ← ADD THIS
+
+const API_BASE = `${BACKEND_URL}/api`;   // http://localhost:8000/api
+const AUTH_BASE = `${BACKEND_URL}/auth`; // http://localhost:8000/auth
 
 async function fetchJSON(url, options = {}) {
+    const token = localStorage.getItem('smartcommerce_token');
     try {
         const response = await fetch(url, {
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
             ...options,
         });
         if (!response.ok) {
@@ -24,35 +31,32 @@ async function fetchJSON(url, options = {}) {
 
 // ─── Auth ───
 export const login = async (email, password) => {
-    const data = await fetchJSON(`${API_BASE}/auth/login`, {
+    const data = await fetchJSON(`${AUTH_BASE}/login`, {  // ← /auth/login
         method: 'POST',
         body: JSON.stringify({ email, password }),
     });
-    // Add dummy token since backend might not return one immediately
     if (!data.token) {
-        data.token = 'smartcommerce-jwt-token'; 
+        data.token = 'smartcommerce-jwt-token';
     }
     return data;
 };
 
 export const signup = async (name, email, password, phone, address) => {
-    // /register only sends an OTP — it does NOT return a token.
-    // The token is obtained after OTP verification via loginUser().
-    return fetchJSON(`${API_BASE}/auth/register`, {
+    return fetchJSON(`${AUTH_BASE}/register`, {  // ← /auth/register
         method: 'POST',
         body: JSON.stringify({ name, email, password, phone, address }),
     });
 };
 
 export const verifyOTP = async (email, otp) => {
-    return fetchJSON(`${API_BASE}/auth/verify-otp`, {
+    return fetchJSON(`${AUTH_BASE}/verify-otp`, {  // ← /auth/verify-otp
         method: 'POST',
         body: JSON.stringify({ email, otp }),
     });
 };
 
 export const resendOTP = async (email) => {
-    return fetchJSON(`${API_BASE}/auth/resend-otp`, {
+    return fetchJSON(`${AUTH_BASE}/resend-otp`, {  // ← /auth/resend-otp
         method: 'POST',
         body: JSON.stringify({ email }),
     });
@@ -77,18 +81,15 @@ export const getProfile = async () => {
 };
 
 export const updateProfile = async (data) => {
-    // Try backend first, fall back to localStorage only
     try {
-        const res = await fetchJSON(`${API_BASE}/auth/update-profile`, {
+        const res = await fetchJSON(`${AUTH_BASE}/update-profile`, {  // ← /auth/update-profile
             method: 'PUT',
             body: JSON.stringify(data),
         });
-        // Merge update into stored user
         const stored = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
         localStorage.setItem('smartcommerce_user', JSON.stringify({ ...stored, ...data }));
         return res;
     } catch {
-        // Offline fallback
         const stored = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
         const updated = { ...stored, ...data };
         localStorage.setItem('smartcommerce_user', JSON.stringify(updated));
@@ -96,7 +97,7 @@ export const updateProfile = async (data) => {
     }
 };
 
-// ─── Cart (localStorage-backed with backend sync) ───
+// ─── Cart (localStorage-backed) ───
 const CART_KEY = 'smartcommerce_cart';
 
 const _readCart = () => {
@@ -179,26 +180,23 @@ export const placeOrder = async (deliveryAddress, deliveryPhone) => {
         created_at: new Date().toISOString(),
     };
 
-    // Persist order
     const orders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
     orders.unshift(order);
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
 
-    // Update user stats
     if (user) {
         user.total_orders = (user.total_orders || 0) + 1;
         user.total_spent = (user.total_spent || 0) + cart.total;
         localStorage.setItem('smartcommerce_user', JSON.stringify(user));
     }
 
-    // Clear cart
     clearCart();
     return { order };
 };
 
 // ─── Currency ───
 export const getExchangeRate = async () => {
-    return { INR_TO_USD: 0.012 }; // Static — swap with live API if needed
+    return { INR_TO_USD: 0.012 };
 };
 
 // ─── Product APIs ───
@@ -235,27 +233,18 @@ export const getBrandRecommendations = (query, limit = 10) => {
 
 // ─── Dynamic Pricing ───
 export const getPrice = (productId, userId = null) => {
-    if (userId) {
-        return fetchJSON(`${API_BASE}/price/${productId}/${userId}`);
-    }
+    if (userId) return fetchJSON(`${API_BASE}/price/${productId}/${userId}`);
     return fetchJSON(`${API_BASE}/price/${productId}`);
 };
 
 // ─── Users & Sessions ───
-export const getUsers = () => {
-    return fetchJSON(`${API_BASE}/users`);
-};
-
-export const getSession = (userId) => {
-    return fetchJSON(`${API_BASE}/session/${userId}`);
-};
+export const getUsers = () => fetchJSON(`${API_BASE}/users`);
+export const getSession = (userId) => fetchJSON(`${API_BASE}/session/${userId}`);
 
 // ─── Dashboard ───
-export const getDashboard = () => {
-    return fetchJSON(`${API_BASE}/dashboard`);
-};
+export const getDashboard = () => fetchJSON(`${API_BASE}/dashboard`);
 
-// ─── Catalog (paginated product listing from product_catalog.csv) ───
+// ─── Catalog ───
 export const getCatalog = (page = 1, limit = 20, category = null, subcategory = null, search = null) => {
     const params = new URLSearchParams({ page, limit });
     if (category) params.append('category', category);

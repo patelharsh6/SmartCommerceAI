@@ -9,19 +9,21 @@ load_dotenv()
 
 def create_app():
     app = Flask(__name__)
-    CORS(app)
+    CORS(app, resources={r"/*": {"origins": "http://localhost:5173"}}, supports_credentials=True)
 
     init_db(app)
 
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(api_bp)
+    app.register_blueprint(auth_bp, url_prefix="/auth")
+    app.register_blueprint(api_bp)  # already has url_prefix="/api"
 
     @app.route("/")
     def home():
-        return {"message": "API Running"}
+        return {"message": "SmartCommerceAI API Running"}
+
+    @app.route("/health")
+    def health():
+        return {"status": "ok"}
 
     return app
 
 app = create_app()
-
-

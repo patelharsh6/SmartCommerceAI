@@ -25,10 +25,8 @@ export function AuthProvider({ children }) {
                         // Token expired or invalid
                         logout();
                     });
-                // Load cart count
-                api.getCart()
-                    .then(data => setCartCount(data.item_count || 0))
-                    .catch(() => {});
+                // Cart not yet implemented on backend
+                setCartCount(0);
             } catch {
                 logout();
             }
@@ -41,11 +39,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem('smartcommerce_token', data.token);
         localStorage.setItem('smartcommerce_user', JSON.stringify(data.user));
         setUser(data.user);
-        // Load cart
-        try {
-            const cartData = await api.getCart();
-            setCartCount(cartData.item_count || 0);
-        } catch { setCartCount(0); }
+        setCartCount(0);
         return data;
     }, []);
 
@@ -75,13 +69,9 @@ export function AuthProvider({ children }) {
         }
     }, []);
 
-    const refreshCart = useCallback(async () => {
-        try {
-            const data = await api.getCart();
-            setCartCount(data.item_count || 0);
-        } catch {
-            setCartCount(0);
-        }
+    // Cart not yet implemented on backend — placeholder for future use
+    const refreshCart = useCallback(() => {
+        setCartCount(0);
     }, []);
 
     return (
