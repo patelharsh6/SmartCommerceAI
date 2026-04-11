@@ -463,7 +463,8 @@ function HomePage() {
             <div className="session-products">
               {session.products_viewed.map((pv, i) => (
                 <span key={i} className="session-product-tag">
-                  <span>{pv.image}</span> {pv.name}
+                  <img src={pv.image_url || pv.img_url} alt="" style={{ width: 18, height: 18, borderRadius: 4, objectFit: 'cover', verticalAlign: 'middle', marginRight: 4 }} onError={(e) => { e.target.style.display = 'none'; }} />
+                  {pv.name}
                 </span>
               ))}
             </div>

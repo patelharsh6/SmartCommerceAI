@@ -1,14 +1,14 @@
 """
 Legacy Recommendation Routes
-These routes use the original recommendation_service functions directly.
-The new /api/... routes in api_routes.py are the primary endpoints.
+These routes provide direct access to recommendation functions.
+The primary endpoints are in api_routes.py under /api/...
 """
 
 from flask import Blueprint, jsonify, request
 from app.services.recommendation_service import (
     recommend_by_category,
     recommend_similar_products,
-    recommend_by_association,
+    recommend_by_brand,
     get_trending,
     get_dynamic_price,
     format_product,
@@ -23,15 +23,9 @@ def category_api(category):
     return jsonify(results)
 
 
-@recommendation_bp.route("/recommend/product/<int:product_id>", methods=["GET"])
+@recommendation_bp.route("/recommend/product/<product_id>", methods=["GET"])
 def product_api(product_id):
     results = recommend_similar_products(product_id)
-    return jsonify(results)
-
-
-@recommendation_bp.route("/recommend/association/<int:product_id>", methods=["GET"])
-def association_api(product_id):
-    results = recommend_by_association(product_id)
     return jsonify(results)
 
 
@@ -41,7 +35,7 @@ def trending_api():
     return jsonify(results)
 
 
-@recommendation_bp.route("/pricing/<int:product_id>", methods=["GET"])
+@recommendation_bp.route("/pricing/<product_id>", methods=["GET"])
 def pricing_api(product_id):
     user_id = request.args.get("user_id", type=int)
     result = get_dynamic_price(product_id, user_id)

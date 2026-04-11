@@ -159,7 +159,7 @@ export default function SearchBar({ products, onSelectProduct, searchQuery, setS
                                         </span>
                                     </div>
                                     <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                                        ${product.base_price}
+                                        ₹{product.base_price}
                                     </div>
                                 </div>
                             ))}

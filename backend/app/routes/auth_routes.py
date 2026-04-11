@@ -416,7 +416,7 @@ from app.models.user_model import (
     create_user,
     find_user,
     verify_user,
-    verify_password
+    verify_password,
 )
 
 from app.utils.otp import generate_otp
@@ -462,7 +462,7 @@ def verify_otp():
         if not user:
             return jsonify({"message": "User not found"}), 404
 
-        if str(user["otp"]) != str(data["otp"]):
+        if str(user["otp"]).strip() != str(data["otp"]).strip():
             return jsonify({"message": "Invalid OTP. Please try again."}), 400
 
         verify_user(data["email"])
@@ -540,7 +540,7 @@ def resend_otp():
         otp = generate_otp()
 
         ext.db.users.update_one(
-            {"email": data["email"]},
+            {"email": data["email"].lower()},
             {"$set": {"otp": otp}}
         )
 
@@ -551,3 +551,35 @@ def resend_otp():
     except Exception as e:
         print(f"[RESEND OTP ERROR]\n{traceback.format_exc()}")
         return jsonify({"message": f"Failed to resend OTP: {str(e)}"}), 500
+
+# ✅ RESET PASSWORD
+@auth_bp.route("/reset-password", methods=["POST"])
+def reset_password():
+    try:
+        data = request.get_json(silent=True)
+
+        if not data or "email" not in data or "otp" not in data or "new_password" not in data:
+            return jsonify({"message": "Email, OTP and new password required"}), 400
+
+        user = find_user(data["email"])
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        if str(user.get("otp")).strip() != str(data["otp"]).strip():
+            return jsonify({"message": "Invalid OTP. Please try again."}), 400
+
+        # Update the password directly
+        update_password(data["email"], data["new_password"])
+        
+        # Optionally, clear the OTP so it can't be reused immediately
+        ext.db.users.update_one(
+            {"email": data["email"].lower()},
+            {"$set": {"otp": None}}
+        )
+
+        return jsonify({"message": "Password reset successfully"}), 200
+
+    except Exception as e:
+        print(f"[RESET PASSWORD ERROR]\n{traceback.format_exc()}")
+        return jsonify({"message": f"Failed to reset password: {str(e)}"}), 500

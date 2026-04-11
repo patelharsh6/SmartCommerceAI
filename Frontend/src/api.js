@@ -58,6 +58,13 @@ export const resendOTP = async (email) => {
     });
 };
 
+export const resetPassword = async (email, otp, newPassword) => {
+    return fetchJSON(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        body: JSON.stringify({ email, otp, new_password: newPassword }),
+    });
+};
+
 // ─── Profile ───
 export const getProfile = async () => {
     try {
@@ -248,20 +255,11 @@ export const getDashboard = () => {
     return fetchJSON(`${API_BASE}/dashboard`);
 };
 
-// ─── Catalog (paginated product listing) ───
+// ─── Catalog (paginated product listing from product_catalog.csv) ───
 export const getCatalog = (page = 1, limit = 20, category = null, subcategory = null, search = null) => {
     const params = new URLSearchParams({ page, limit });
     if (category) params.append('category', category);
     if (subcategory) params.append('subcategory', subcategory);
     if (search) params.append('search', search);
-    // Falls back to getProducts shape if /catalog doesn't exist
-    return fetchJSON(`${API_BASE}/products?${params.toString()}`)
-        .then(data => ({
-            products: data.products || [],
-            categories: data.categories || [],
-            page,
-            has_more: (data.products || []).length === limit,
-            total: data.total || (data.products || []).length,
-        }));
+    return fetchJSON(`${API_BASE}/catalog?${params.toString()}`);
 };
-

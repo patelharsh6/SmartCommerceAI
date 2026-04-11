@@ -8,12 +8,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Setup paths relative to this file
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_PATH = os.path.join(BASE_DIR, "data")
+MODEL2_PATH = os.path.join(DATA_PATH, "model2")
 
 class ProductEngine:
     def __init__(self):
-        self.model = pickle.load(open(os.path.join(DATA_PATH, "ridge_model.pkl"), "rb"))
-        self.scaler = pickle.load(open(os.path.join(DATA_PATH, "scaler.pkl"), "rb"))
-        self.encoders = pickle.load(open(os.path.join(DATA_PATH, "encoders.pkl"), "rb"))
+        self.model = pickle.load(open(os.path.join(MODEL2_PATH, "ridge_model.pkl"), "rb"))
+        self.scaler = pickle.load(open(os.path.join(MODEL2_PATH, "scaler.pkl"), "rb"))
+        self.encoders = pickle.load(open(os.path.join(MODEL2_PATH, "encoders.pkl"), "rb"))
         self.df = pd.read_csv(os.path.join(DATA_PATH, "product_catalog.csv"))
         
         # Pre-compute similarity matrix for recommendations
@@ -44,11 +45,13 @@ class ProductEngine:
         except Exception as e:
             return None, f"Encoding error: {str(e)}"
 
+        is_active = 1 if data.get('is_active') in [True, 'TRUE', 'True', 1] else 0
+
         features = np.array([[
             cat, sub, brand,
             data['cost_price_usd'], data['inventory_count'],
             data['avg_rating'], data['review_count'], data['weight_kg'],
-            1 if data['is_active'] in [True, 'TRUE', 1] else 0,
+            is_active,
             launch_year, tags_count,
             data['base_price_usd'] - data['cost_price_usd'], # margin
             data['inventory_count'] * data['cost_price_usd'], # inv_value
