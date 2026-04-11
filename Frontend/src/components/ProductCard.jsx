@@ -51,10 +51,16 @@ export default function ProductCard({ product, priceData, isTrending, onClick, o
 
                 <div className="product-card-footer">
                     <div className="product-card-price">
+<<<<<<< HEAD
                         <span className="price-current">₹{finalPrice}</span>
+=======
+                        <span className="price-current">
+                            ${finalPrice}
+                        </span>
+>>>>>>> 94ba4386ebddc26dfc01dc51921f6a7408db2278
                         {priceData && priceData.final_price !== priceData.base_price && (
                             <div className="price-savings-row">
-                                <span className="price-base">₹{priceData.base_price}</span>
+                                <span className="price-base">${priceData.base_price}</span>
                                 <span className={`price-badge ${priceData.savings_percent > 0 ? 'savings' : 'increase'}`}>
                                     {priceData.savings_percent > 0
                                         ? `Save ${priceData.savings_percent}%`
