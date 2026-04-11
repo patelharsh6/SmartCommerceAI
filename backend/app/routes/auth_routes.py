@@ -477,6 +477,8 @@ def verify_otp():
 @auth_bp.route("/login", methods=["POST"])
 def login():
     try:
+        import jwt
+        import os
         data = request.get_json(silent=True)
 
         if not data or "email" not in data or "password" not in data:
@@ -493,11 +495,26 @@ def login():
         if not user["is_verified"]:
             return jsonify({"message": "Please verify your email first"}), 403
 
+        # Generate JWT token
+        JWT_SECRET = os.environ.get("JWT_SECRET", "smartcommerce-secret-key-2026")
+        user_id = str(user.get("_id", ""))
+        token = jwt.encode(
+            {"email": user["email"], "user_id": user_id},
+            JWT_SECRET,
+            algorithm="HS256"
+        )
+
         return jsonify({
             "message": "Login successful",
+            "token": token,
             "user": {
+                "id": user_id,
                 "name": user["name"],
-                "email": user["email"]
+                "email": user["email"],
+                "phone": user.get("phone", ""),
+                "address": user.get("address", ""),
+                "avatar": user.get("avatar", "👤"),
+                "created_at": str(user.get("created_at", "")),
             }
         }), 200
 

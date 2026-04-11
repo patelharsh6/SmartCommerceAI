@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, User, Phone, MapPin } from 'lucide-react';
-import BACKEND_URL from '../config';
+import { useAuth } from '../context/AuthContext';
+import * as api from '../api';
 import './SignupPage.css';
 
 import InputField from '../components/InputField';
@@ -26,6 +27,7 @@ export default function SignupPage() {
     const [otp, setOtp] = useState('');
 
     const navigate = useNavigate();
+    const { loginUser } = useAuth();
 
     const passwordRules = {
         length: formData.password.length >= 6,
@@ -44,18 +46,6 @@ export default function SignupPage() {
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
-    const safeParseJSON = async (response) => {
-        const text = await response.text();
-        if (!text || text.trim() === '') {
-            return { message: `Server error (${response.status})` };
-        }
-        try {
-            return JSON.parse(text);
-        } catch {
-            return { message: `Unexpected response: ${text.substring(0, 100)}` };
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -67,21 +57,14 @@ export default function SignupPage() {
 
         setLoading(true);
         try {
-            const response = await fetch(`${BACKEND_URL}/auth/register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: formData.name,
-                    email: formData.email,
-                    password: formData.password,
-                    phone: formData.phone,
-                    address: formData.address,
-                }),
-            });
-
-            const data = await safeParseJSON(response);
-            if (!response.ok) throw new Error(data.message);
-
+            // Uses api.js which goes through Vite proxy → /api/auth/register
+            await api.signup(
+                formData.name,
+                formData.email,
+                formData.password,
+                formData.phone,
+                formData.address
+            );
             setStep(2);
         } catch (err) {
             setError(err.message || 'Signup failed. Please try again.');
@@ -97,22 +80,18 @@ export default function SignupPage() {
         setLoading(true);
 
         try {
-            const response = await fetch(`${BACKEND_URL}/auth/verify-otp`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: formData.email, otp }),
-            });
+            // Step 1: Verify OTP via api layer (Vite proxy → /api/auth/verify-otp)
+            await api.verifyOTP(formData.email, otp);
 
-            const data = await safeParseJSON(response);
-            if (!response.ok) {
-                setOtp(''); 
-                throw new Error(data.message);
-            }
+            // Step 2: Auto-login → stores token + user in AuthContext & localStorage
+            await loginUser(formData.email, formData.password);
 
-            setSuccess('✅ Email verified! Redirecting to login...');
-            setTimeout(() => navigate('/login'), 1500);
+            // Step 3: Redirect to dashboard
+            setSuccess('✅ Account created! Taking you to the dashboard...');
+            setTimeout(() => navigate('/'), 800);
 
         } catch (err) {
+            setOtp('');
             setError(err.message || 'OTP verification failed.');
         } finally {
             setLoading(false);
@@ -125,16 +104,9 @@ export default function SignupPage() {
         setResendLoading(true);
 
         try {
-            const response = await fetch(`${BACKEND_URL}/auth/resend-otp`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: formData.email }),
-            });
-
-            const data = await safeParseJSON(response);
-            if (!response.ok) throw new Error(data.message);
-
-            setOtp(''); 
+            // Uses api layer (Vite proxy → /api/auth/resend-otp)
+            await api.resendOTP(formData.email);
+            setOtp('');
             setSuccess('✅ New OTP sent to your email!');
         } catch (err) {
             setError(err.message || 'Failed to resend OTP.');
