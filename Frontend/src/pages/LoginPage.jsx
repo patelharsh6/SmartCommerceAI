@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import BACKEND_URL from '../config';
+import * as api from '../api';
 
 // Assuming these are your local files/components
 import './SignupPage.css';
 import InputField from '../components/InputField';
 import PasswordField from '../components/PasswordField';
-// Assuming you have an API config file, if not, replace with strings
-const API = {
-    LOGIN: BACKEND_URL + '/auth/login',
-   VERIFY_OTP: BACKEND_URL + '/auth/verify-otp',
-    RESEND_OTP: BACKEND_URL + '/auth/resend-otp'
-};
 
 // Placeholder for OTPInput if it's a custom component
 // If you don't have one, replace with a standard input
@@ -81,26 +74,16 @@ export default function LoginPage() {
         setError("");
 
         try {
-            // Option A: Using your Context (if it handles the unverified error)
-            // await loginUser(email, password, rememberMe);
-            // navigate('/');
-
-            // Option B: Direct Axios call for finer control over OTP step
-            const res = await axios.post(API.LOGIN, { email, password });
-
-            if (res.data.message === "Login successful") {
-                // If your context has a login method to save the token/user
-                // loginUser(res.data.user); 
-                navigate('/');
-            }
+            await loginUser(email, password);
+            navigate('/');
         } catch (err) {
-            const msg = err.response?.data?.message || err.message;
+            const msg = err.message || "Something went wrong";
 
-            if (msg === "Please verify your email first") {
+            if (msg === "Please verify your email first" || msg.includes("verify")) {
                 setStep(2);
                 setTimer(30); // Start resend timer
             } else {
-                setError(msg || "Something went wrong");
+                setError(msg);
             }
         } finally {
             setLoading(false);
@@ -113,15 +96,13 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const res = await axios.post(API.VERIFY_OTP, { email, otp });
+            await api.verifyOTP(email, otp);
 
-            if (res.data.message === "Email verified successfully") {
-                // Auto-login after successful verification
-                await loginUser(email, password, rememberMe);
-                navigate('/');
-            }
+            // Auto-login after successful verification
+            await loginUser(email, password);
+            navigate('/');
         } catch (err) {
-            setError(err.response?.data?.message || "OTP verification failed");
+            setError(err.message || "OTP verification failed");
         } finally {
             setLoading(false);
         }
@@ -130,11 +111,11 @@ export default function LoginPage() {
     const handleResendOTP = async () => {
         try {
             setResendLoading(true);
-            await axios.post(API.RESEND_OTP, { email });
+            await api.resendOTP(email);
             setTimer(30); // Reset timer
             setError(""); // Clear old errors
         } catch (err) {
-            setError(err.response?.data?.message || "Failed to resend OTP");
+            setError(err.message || "Failed to resend OTP");
         } finally {
             setResendLoading(false);
         }
@@ -184,8 +165,21 @@ export default function LoginPage() {
                                 animate={{ opacity: 1, y: 0, x: [-10, 10, -10, 10, 0] }}
                                 exit={{ opacity: 0 }}
                                 transition={{ duration: 0.4 }}
+                                style={{
+                                    background: '#fef2f2',
+                                    border: '1px solid #f87171',
+                                    color: '#b91c1c',
+                                    borderRadius: '8px',
+                                    padding: '12px 16px',
+                                    fontSize: '14px',
+                                    fontWeight: 500,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    marginBottom: '24px'
+                                }}
                             >
-                                <span>⚠️</span> {error}
+                                <span style={{ fontSize: '18px' }}>⚠️</span> {error}
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -234,11 +228,18 @@ export default function LoginPage() {
                                 </div>
 
                                 <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
+                                    whileHover={!loading && email && password ? { scale: 1.02, boxShadow: '0 8px 16px rgba(0,0,0,0.1)' } : {}}
+                                    whileTap={!loading && email && password ? { scale: 0.98 } : {}}
                                     type="submit"
                                     className="auth-submit-btn"
                                     disabled={loading || !email || !password}
+                                    style={{
+                                        background: loading || !email || !password 
+                                            ? 'var(--border)' 
+                                            : 'linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%)',
+                                        color: loading || !email || !password ? 'var(--text-muted)' : 'white',
+                                        opacity: loading || !email || !password ? 0.7 : 1,
+                                    }}
                                 >
                                     {loading ? <span className="btn-spinner"></span> : 'Sign In'}
                                 </motion.button>

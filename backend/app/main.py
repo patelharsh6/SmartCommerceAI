@@ -13,8 +13,8 @@ def create_app():
 
     init_db(app)
 
-    app.register_blueprint(auth_bp, url_prefix="/auth")
-    app.register_blueprint(api_bp)
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    app.register_blueprint(api_bp, url_prefix="/api")
 
     @app.route("/")
     def home():

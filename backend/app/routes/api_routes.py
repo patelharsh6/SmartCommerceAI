@@ -25,7 +25,7 @@ from app.services.recommendation_service import (
 from datetime import datetime
 from collections import Counter
 
-api_bp = Blueprint("api", __name__, url_prefix="/api")
+api_bp = Blueprint("api", __name__)
 
 # ═══════════════════════════════════════════════════════════════
 # IN-MEMORY SESSION & EVENT TRACKING
