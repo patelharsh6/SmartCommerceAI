@@ -200,15 +200,6 @@ export const getProducts = (category = null) => {
     return fetchJSON(`${API_BASE}/products${params}`);
 };
 
-export const getCatalog = async (page = 1, limit = 20, category = '', subcategory = '', search = '') => {
-  const params = new URLSearchParams({ page, limit });
-  if (category) params.append('category', category);
-  if (subcategory) params.append('subcategory', subcategory);
-  if (search) params.append('search', search);
-
-  return fetchJSON(`${API_BASE}/catalog?${params.toString()}`);
-};
-
 export const getProduct = (productId) => {
     return fetchJSON(`${API_BASE}/products/${productId}`);
 };

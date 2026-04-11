@@ -47,16 +47,16 @@ def _build_demo_users():
     # Classify a sample
     classified = {}
     for uid in purchasers[:200]:
-        seg = classify_user(int(uid))
+        seg = classify_user(uid)
         if seg not in classified:
-            classified[seg] = int(uid)
+            classified[seg] = uid
         if len(classified) >= 3:
             break
 
     # Find a browser-only user
     for uid in browsers:
         if uid not in purchasers:
-            classified['browser'] = int(uid)
+            classified['browser'] = uid
             break
 
     # If we don't have enough variety, use synthetic IDs
@@ -416,10 +416,7 @@ def api_get_price(product_id, user_id=None):
     if user_id and user_id in DEMO_USERS:
         real_uid = DEMO_USERS[user_id].get("real_user_id")
     elif user_id:
-        try:
-            real_uid = int(user_id)
-        except (ValueError, TypeError):
-            real_uid = None
+        real_uid = user_id
 
     result = get_dynamic_price(product_id, real_uid)
 
@@ -511,10 +508,35 @@ def api_get_brand_recommendations(query):
     """
     limit = request.args.get("limit", 10, type=int)
     result = recommend_by_brand(query, top_n=limit)
-# """
-# API Routes — Serves all /api/... endpoints expected by the React frontend.
-# Uses real ML models for recommendations and dynamic pricing.
-# """
+    return jsonify(result)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 📊 DASHBOARD   (GET /api/dashboard)
+# ═══════════════════════════════════════════════════════════════
+
+@api_bp.route("/dashboard", methods=["GET"])
+def api_get_dashboard():
+    """Return summary stats for the dashboard UI."""
+    total_events_in_dataset = len(raw_events_df) if not raw_events_df.empty else 0
+    total_live_events = len(LIVE_EVENTS)
+    active_sessions = len(SESSIONS)
+
+    # Build category stats
+    categories = []
+    for c in ALL_CATEGORIES:
+        count = len(cat_data[cat_data['category_code'] == c]) if not cat_data.empty else 0
+        categories.append({"code": c, "count": count})
+
+    return jsonify({
+        "total_products": len(PRODUCT_LOOKUP),
+        "total_events": total_events_in_dataset + total_live_events,
+        "total_users": len(DEMO_USERS),
+        "active_sessions": active_sessions,
+        "categories": categories,
+        "dataset_events": total_events_in_dataset,
+        "live_events": total_live_events
+    })
 
 # from flask import Blueprint, jsonify, request
 # from app.services.recommendation_service import (

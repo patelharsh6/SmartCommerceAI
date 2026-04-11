@@ -32,58 +32,110 @@ def _data_path(filename):
 # 1. LOAD CATEGORY RECOMMENDATION DATA
 # ═══════════════════════════════════════════════════════════════
 print("  [+] Loading category recommendation data...")
-cat_data = pd.read_csv(_data_path("catrecommandprocessed_data.csv"))
-cat_model = joblib.load(_data_path("catrecommandmodel.pkl"))
+try:
+    cat_data = pd.read_csv(_data_path("catrecommandprocessed_data.csv"))
+    cat_model = joblib.load(_data_path("catrecommandmodel.pkl"))
 
-# Build product lookup by product_id (int)
-cat_data['product_id'] = cat_data['product_id'].astype(int)
-PRODUCT_LOOKUP = {}
-for _, row in cat_data.iterrows():
-    PRODUCT_LOOKUP[int(row['product_id'])] = row.to_dict()
+    # Build product lookup by product_id (int)
+    cat_data['product_id'] = cat_data['product_id'].astype(int)
+    PRODUCT_LOOKUP = {}
+    for _, row in cat_data.iterrows():
+        PRODUCT_LOOKUP[int(row['product_id'])] = row.to_dict()
 
-# Get unique categories and brands
-ALL_CATEGORIES = sorted(cat_data['category_code'].dropna().unique().tolist())
-ALL_BRANDS = sorted(cat_data['brand'].dropna().unique().tolist())
+    # Get unique categories and brands
+    ALL_CATEGORIES = sorted(cat_data['category_code'].dropna().unique().tolist())
+    ALL_BRANDS = sorted(cat_data['brand'].dropna().unique().tolist())
+except FileNotFoundError as e:
+    print(f"  [WARN] Category recommendation files not found: {e}")
+    print("         Run the training pipeline to generate them. Using product_catalog.csv as fallback...")
+    try:
+        cat_data = pd.read_csv(_data_path("product_catalog.csv"))
+        # Map product_catalog.csv columns to expected schema
+        if 'sku_id' in cat_data.columns and 'product_id' not in cat_data.columns:
+            cat_data['product_id'] = range(1, len(cat_data) + 1)  # synthetic int IDs
+        if 'product_id' in cat_data.columns:
+            cat_data['product_id'] = cat_data['product_id'].astype(int)
+        # Map category columns
+        if 'category_code' not in cat_data.columns:
+            if 'category' in cat_data.columns and 'subcategory' in cat_data.columns:
+                cat_data['category_code'] = cat_data['category'].fillna('') + '.' + cat_data['subcategory'].fillna('')
+            elif 'category' in cat_data.columns:
+                cat_data['category_code'] = cat_data['category']
+            else:
+                cat_data['category_code'] = 'unknown'
+        # Map price column
+        if 'price' not in cat_data.columns:
+            cat_data['price'] = cat_data.get('current_price_usd', cat_data.get('base_price_usd', pd.Series([0]*len(cat_data))))
+        # Add missing columns with defaults
+        for col in ['final_score', 'popularity', 'interaction_count']:
+            if col not in cat_data.columns:
+                cat_data[col] = 0
+        if 'brand' not in cat_data.columns:
+            cat_data['brand'] = 'unknown'
+        PRODUCT_LOOKUP = {}
+        for _, row in cat_data.iterrows():
+            PRODUCT_LOOKUP[int(row['product_id'])] = row.to_dict()
+        ALL_CATEGORIES = sorted(cat_data['category_code'].dropna().unique().tolist())
+        ALL_BRANDS = sorted(cat_data['brand'].dropna().unique().tolist())
+        print(f"  [OK] Loaded {len(cat_data)} products from product_catalog.csv as fallback")
+    except Exception as ex:
+        print(f"  [WARN] product_catalog.csv also not available: {ex}. Using empty data.")
+        cat_data = pd.DataFrame(columns=['product_id', 'category_code', 'brand', 'price', 'final_score', 'popularity', 'interaction_count'])
+        PRODUCT_LOOKUP = {}
+        ALL_CATEGORIES = []
+        ALL_BRANDS = []
+    cat_model = None
 
 
 # ═══════════════════════════════════════════════════════════════
 # 2. LOAD APRIORI ASSOCIATION RULES (Product Recommendations)
 # ═══════════════════════════════════════════════════════════════
 print("  [+] Loading association rules...")
-apriori_rules_df = pd.read_csv(_data_path("apriori_rules.csv"))
-apriori_rules_df['antecedents'] = apriori_rules_df['antecedents'].astype(int)
-apriori_rules_df['consequents'] = apriori_rules_df['consequents'].astype(int)
-
-# Build dict: product_id -> [(recommended_id, confidence, lift), ...]
 ASSOCIATION_MAP = {}
-for _, row in apriori_rules_df.iterrows():
-    ant = int(row['antecedents'])
-    con = int(row['consequents'])
-    conf = float(row['confidence'])
-    lift = float(row['lift'])
-    if ant not in ASSOCIATION_MAP:
-        ASSOCIATION_MAP[ant] = []
-    ASSOCIATION_MAP[ant].append((con, conf, lift))
+try:
+    apriori_rules_df = pd.read_csv(_data_path("apriori_rules.csv"))
+    apriori_rules_df['antecedents'] = apriori_rules_df['antecedents'].astype(int)
+    apriori_rules_df['consequents'] = apriori_rules_df['consequents'].astype(int)
 
-# Sort by confidence descending
-for key in ASSOCIATION_MAP:
-    ASSOCIATION_MAP[key] = sorted(ASSOCIATION_MAP[key], key=lambda x: x[1], reverse=True)
+    # Build dict: product_id -> [(recommended_id, confidence, lift), ...]
+    for _, row in apriori_rules_df.iterrows():
+        ant = int(row['antecedents'])
+        con = int(row['consequents'])
+        conf = float(row['confidence'])
+        lift = float(row['lift'])
+        if ant not in ASSOCIATION_MAP:
+            ASSOCIATION_MAP[ant] = []
+        ASSOCIATION_MAP[ant].append((con, conf, lift))
+
+    # Sort by confidence descending
+    for key in ASSOCIATION_MAP:
+        ASSOCIATION_MAP[key] = sorted(ASSOCIATION_MAP[key], key=lambda x: x[1], reverse=True)
+except FileNotFoundError as e:
+    print(f"  [WARN] Association rules not found: {e}")
+    print("         Run the Apriori training pipeline to generate apriori_rules.csv.")
 
 
 # ═══════════════════════════════════════════════════════════════
 # 3. LOAD DYNAMIC PRICING MODEL
 # ═══════════════════════════════════════════════════════════════
 print("  [+] Loading dynamic pricing model...")
-pricing_model = joblib.load(_data_path("model.pkl"))
-pricing_scaler = joblib.load(_data_path("scaler.pkl"))
-pricing_features = joblib.load(_data_path("features.pkl"))
-pricing_data = pd.read_csv(_data_path("pricing_data.csv"))
-pricing_data['product_id'] = pricing_data['product_id'].astype(int)
-
-# Build pricing lookup
+pricing_model = None
+pricing_scaler = None
+pricing_features = None
 PRICING_LOOKUP = {}
-for _, row in pricing_data.iterrows():
-    PRICING_LOOKUP[int(row['product_id'])] = row.to_dict()
+try:
+    pricing_model = joblib.load(_data_path("model.pkl"))
+    pricing_scaler = joblib.load(_data_path("scaler.pkl"))
+    pricing_features = joblib.load(_data_path("features.pkl"))
+    pricing_data = pd.read_csv(_data_path("pricing_data.csv"))
+    pricing_data['product_id'] = pricing_data['product_id'].astype(int)
+
+    # Build pricing lookup
+    for _, row in pricing_data.iterrows():
+        PRICING_LOOKUP[int(row['product_id'])] = row.to_dict()
+except FileNotFoundError as e:
+    print(f"  [WARN] Dynamic pricing files not found: {e}")
+    print("         Run the pricing training pipeline to generate model.pkl, features.pkl, pricing_data.csv.")
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -92,10 +144,14 @@ for _, row in pricing_data.iterrows():
 print("  [+] Loading raw events data...")
 try:
     raw_events_df = pd.read_csv(_data_path("Dataset.csv"))
-    raw_events_df['product_id'] = raw_events_df['product_id'].astype(int)
-    raw_events_df['user_id'] = raw_events_df['user_id'].astype(int)
+    # product_id may be string (SKU-based) or int — keep as string for safety
+    raw_events_df['product_id'] = raw_events_df['product_id'].astype(str)
+    raw_events_df['user_id'] = raw_events_df['user_id'].astype(str)
 except FileNotFoundError:
     print("  [WARN] Dataset.csv not found! Using empty user events dataframe.")
+    raw_events_df = pd.DataFrame(columns=['product_id', 'user_id', 'event_type', 'price'])
+except Exception as e:
+    print(f"  [WARN] Error loading Dataset.csv: {e}. Using empty dataframe.")
     raw_events_df = pd.DataFrame(columns=['product_id', 'user_id', 'event_type', 'price'])
 
 
@@ -127,7 +183,7 @@ def _invalidate_if_new_day():
 
 def classify_user(user_id):
     """Classify a user based on their purchase history in the dataset."""
-    user_data = raw_events_df[raw_events_df['user_id'] == user_id]
+    user_data = raw_events_df[raw_events_df['user_id'] == str(user_id)]
 
     if user_data.empty:
         return "new_user"
@@ -302,7 +358,7 @@ def get_dynamic_price(product_id, user_id=None):
     _invalidate_if_new_day()
 
     pid = int(product_id)
-    uid = int(user_id) if user_id is not None else None
+    uid = str(user_id) if user_id is not None else None
 
     # Determine user segment
     user_segment = classify_user(uid) if uid else "anonymous"
