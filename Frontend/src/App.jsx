@@ -17,7 +17,6 @@ import CheckoutPage from './pages/CheckoutPage'
 import { Navigate } from 'react-router-dom';
 import { getImageForProduct } from './utils';
 import SearchBar from './components/SearchBar';
-import Sidebar from './components/Sidebar';
 import ProductCard from './components/ProductCard';
 
 const ProtectedRoute = ({ children }) => {
@@ -404,13 +403,7 @@ function HomePage() {
 
       <div className="app-container">
         <div className="dashboard-layout">
-          {/* ─── SIDEBAR ─── */}
-          <Sidebar
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={handleCategoryClick}
-          />
-
+        
           {/* ─── MAIN CONTENT ─── */}
           <main className="dashboard-main">
             {/* ─── HERO ─── */}
