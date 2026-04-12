@@ -1,13 +1,13 @@
-import { Routes, Route } from 'react-router-dom'
-import HomePage from './pages/HomePage'
+import { useState, useEffect, useCallback } from 'react'
+import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import './App.css'
+import * as api from './api'
+import { useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import SignupPage from './pages/SignupPage'
 import ProfilePage from './pages/ProfilePage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
-<<<<<<< HEAD
-import './App.css'
-=======
 
 /* ═══════════════════════════════════════════════════════════════
    SmartCommerceAI — Main Application
@@ -25,24 +25,20 @@ const ProtectedRoute = ({ children }) => {
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
->>>>>>> c4ac3b45a720008ab48088b49b48f2cc161ba1d6
 
 function App() {
   return (
     <Routes>
-      <Route path="/"         element={<HomePage />} />
-      {/* <Route path="/login"    element={<LoginPage />} />
-      <Route path="/signup"   element={<SignupPage />} />
-      <Route path="/profile"  element={<ProfilePage />} />
-      <Route path="/cart"     element={<CartPage />} />
-      <Route path="/checkout" element={<CheckoutPage />} /> */}
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignupPage />} />
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+      <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
     </Routes>
   )
 }
 
-<<<<<<< HEAD
-export default App
-=======
 function HomePage() {
   const { user, isAuthenticated, logout, cartCount, refreshCart } = useAuth()
   const navigate = useNavigate()
@@ -898,9 +894,4 @@ function HomePage() {
   )
 }
 
-<<<<<<< HEAD
 export default App
->>>>>>> 94ba4386ebddc26dfc01dc51921f6a7408db2278
-=======
-export default App
->>>>>>> c4ac3b45a720008ab48088b49b48f2cc161ba1d6
