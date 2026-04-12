@@ -26,6 +26,7 @@ def create_app():
 
     # ── Register blueprints ────────────────────────────────
     app.register_blueprint(auth_bp, url_prefix="/auth")
+    # app.register_blueprint(api_bp)  # already has url_prefix="/api"
     app.register_blueprint(api_bp)            # already has url_prefix="/api"
     app.register_blueprint(pricing_bp)        # url_prefix="/api/pricing" (set inside blueprint)
 

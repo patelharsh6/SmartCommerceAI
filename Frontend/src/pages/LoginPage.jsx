@@ -15,7 +15,7 @@ const PremiumInput = ({ icon: Icon, label, ...props }) => (
             <div style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', pointerEvents: 'none', transition: 'color 0.2s', zIndex: 1 }}>
                 <Icon size={18} />
             </div>
-            <input 
+            <input
                 {...props}
                 style={{
                     width: '100%', padding: '14px 16px 14px 44px',
@@ -91,7 +91,7 @@ export default function LoginPage() {
     const [newPassword, setNewPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    
+
     // Auth context
     const { loginUser } = useAuth();
     const navigate = useNavigate();
@@ -99,15 +99,26 @@ export default function LoginPage() {
     // ─── Handlers ───
     const handleLogin = async (e) => {
         e.preventDefault();
-        setLoading(true); setError('');
+        setLoading(true);
+        setError('');
+
         try {
+            const ADMIN_EMAIL = "admin@gmail.com";
+            const ADMIN_PASSWORD = "admin@1234";
+            if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+                localStorage.setItem('role', 'admin');
+                navigate('/admin');
+                return;
+            }
             await loginUser(email, password);
+            localStorage.setItem('role', 'user');
             navigate('/');
+
         } catch (err) {
             const msg = err.message || "Invalid credentials.";
             if (msg.includes("verify") || msg.includes("OTP")) {
                 setView('verify-otp');
-                api.resendOTP(email).catch(() => {});
+                api.resendOTP(email).catch(() => { });
             } else {
                 setError(msg);
             }
@@ -135,7 +146,7 @@ export default function LoginPage() {
         setLoading(true); setError('');
         try {
             // Simulate sending reset OTP (if backend supports, replace with actual call: api.requestPasswordReset(email))
-            await api.resendOTP(email); 
+            await api.resendOTP(email);
             setView('reset-otp');
         } catch (err) {
             setError(err.message || 'Failed to send reset code.');
@@ -181,10 +192,10 @@ export default function LoginPage() {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', background: '#F9FAFB', fontFamily: 'Inter, sans-serif' }}>
-            
+
             {/* ─── Premium Left Branding (Apple / Stripe inspired) ─── */}
             <div style={{
-                flex: 1, position: 'relative', overflow: 'hidden', display: 'flex', 
+                flex: 1, position: 'relative', overflow: 'hidden', display: 'flex',
                 flexDirection: 'column', justifyContent: 'center', padding: '60px',
                 background: '#0A0A0A', color: 'white'
             }} className="auth-left-hide-mobile">
@@ -207,20 +218,20 @@ export default function LoginPage() {
                 </div>
 
                 <div style={{ position: 'relative', zIndex: 1, maxWidth: '440px' }}>
-                    <div style={{ 
-                        width: '48px', height: '48px', background: 'linear-gradient(135deg, #fff 0%, #a5b4fc 100%)', 
+                    <div style={{
+                        width: '48px', height: '48px', background: 'linear-gradient(135deg, #fff 0%, #a5b4fc 100%)',
                         borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px',
                         boxShadow: '0 0 20px rgba(165, 180, 252, 0.4)'
                     }}>
                         <span style={{ fontSize: '24px', color: '#000' }}>🛍️</span>
                     </div>
-                    <motion.h1 
+                    <motion.h1
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
                         style={{ fontSize: '48px', fontWeight: 800, letterSpacing: '-1.5px', lineHeight: 1.1, marginBottom: '24px' }}
                     >
                         Welcome to the <br />Future of Retail.
                     </motion.h1>
-                    <motion.p 
+                    <motion.p
                         initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                         style={{ fontSize: '18px', color: '#9CA3AF', lineHeight: 1.6 }}
                     >
@@ -238,7 +249,7 @@ export default function LoginPage() {
                 <GlassCard>
                     <AnimatePresence mode="wait">
                         {error && (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
                                 animate={{ opacity: 1, y: 0, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
@@ -260,9 +271,9 @@ export default function LoginPage() {
                                     <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#111', letterSpacing: '-0.5px', marginBottom: '8px' }}>Sign In</h2>
                                     <p style={{ color: '#6B7280', fontSize: '15px' }}>Enter your details to access your account.</p>
                                 </div>
-                                
+
                                 <PremiumInput icon={Mail} type="email" placeholder="Email address" value={email} onChange={e => setEmail(e.target.value)} required />
-                                
+
                                 <div style={{ position: 'relative' }}>
                                     <PremiumInput icon={Lock} type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
                                 </div>
@@ -284,7 +295,7 @@ export default function LoginPage() {
                                 }} onMouseEnter={e => !loading && (e.currentTarget.style.transform = 'translateY(-2px)')} onMouseLeave={e => !loading && (e.currentTarget.style.transform = 'none')}>
                                     {loading ? <span className="btn-spinner"></span> : 'Sign in securely'}
                                 </button>
-                                
+
                                 <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#6B7280', fontWeight: 500 }}>
                                     Don't have an account? <Link to="/signup" style={{ color: '#111', fontWeight: 700, textDecoration: 'none' }}>Sign up</Link>
                                 </div>
@@ -298,7 +309,7 @@ export default function LoginPage() {
                         {view === 'forgot' && (
                             <motion.form key="forgot" variants={fadeVariants} initial="hidden" animate="visible" exit="exit" onSubmit={handleForgotRequest}>
                                 <button type="button" onClick={() => setView('login')} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', marginBottom: '24px', padding: 0, display: 'flex' }}><ChevronLeft size={20} /></button>
-                                
+
                                 <div style={{ marginBottom: '32px' }}>
                                     <div style={{ width: '56px', height: '56px', background: 'var(--accent-glow)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', color: 'var(--accent-primary)' }}>
                                         <Key size={28} />
@@ -328,13 +339,13 @@ export default function LoginPage() {
                         {view === 'reset-otp' && (
                             <motion.form key="reset-otp" variants={fadeVariants} initial="hidden" animate="visible" exit="exit" onSubmit={handleForgotVerify}>
                                 <button type="button" onClick={() => setView('forgot')} style={{ background: 'none', border: 'none', color: '#6B7280', cursor: 'pointer', marginBottom: '24px', padding: 0, display: 'flex' }}><ChevronLeft size={20} /></button>
-                                
+
                                 <div style={{ marginBottom: '32px', textAlign: 'center' }}>
                                     <div style={{ width: '64px', height: '64px', background: 'var(--accent-glow)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: 'var(--accent-primary)' }}>
                                         <Mail size={30} />
                                     </div>
                                     <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#111', letterSpacing: '-0.5px', marginBottom: '8px' }}>Check your email</h2>
-                                    <p style={{ color: '#6B7280', fontSize: '15px', lineHeight: 1.5 }}>We sent a 6-digit verification code to<br/><strong style={{color:'#111'}}>{email}</strong></p>
+                                    <p style={{ color: '#6B7280', fontSize: '15px', lineHeight: 1.5 }}>We sent a 6-digit verification code to<br /><strong style={{ color: '#111' }}>{email}</strong></p>
                                 </div>
 
                                 <PremiumOTPInput length={6} value={otp} onChange={setOtp} />
@@ -346,7 +357,7 @@ export default function LoginPage() {
                                 }}>
                                     {loading ? <span className="btn-spinner"></span> : 'Verify Code'}
                                 </button>
-                                
+
                                 <button type="button" onClick={() => api.resendOTP(email)} style={{ width: '100%', padding: '14px', marginTop: '12px', background: 'none', border: 'none', color: '#6B7280', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
                                     Didn't receive it? <span style={{ color: 'var(--accent-primary)' }}>Resend code</span>
                                 </button>
@@ -394,7 +405,7 @@ export default function LoginPage() {
                             ════════════════════════════════════════════ */}
                         {view === 'success' && (
                             <motion.div key="success" variants={fadeVariants} initial="hidden" animate="visible" exit="exit" style={{ textAlign: 'center', padding: '20px 0' }}>
-                                <motion.div 
+                                <motion.div
                                     initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', damping: 12, delay: 0.1 }}
                                     style={{ width: '80px', height: '80px', background: '#0bb88a', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'white' }}
                                 >
@@ -402,7 +413,7 @@ export default function LoginPage() {
                                 </motion.div>
                                 <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#111', letterSpacing: '-0.5px', marginBottom: '12px' }}>Password Reset!</h2>
                                 <p style={{ color: '#6B7280', fontSize: '16px', lineHeight: 1.5, marginBottom: '32px' }}>Your password has been successfully reset. You can now securely log into your account.</p>
-                                
+
                                 <button onClick={() => { setView('login'); setPassword(''); setOtp(''); setNewPassword(''); }} style={{
                                     width: '100%', padding: '14px', borderRadius: '12px', border: 'none',
                                     background: '#111', color: '#fff', fontSize: '15px', fontWeight: 600, cursor: 'pointer'
@@ -423,7 +434,7 @@ export default function LoginPage() {
                                         <Mail size={30} />
                                     </div>
                                     <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#111', letterSpacing: '-0.5px', marginBottom: '8px' }}>Verify your email</h2>
-                                    <p style={{ color: '#6B7280', fontSize: '15px', lineHeight: 1.5 }}>Please enter the code we sent to<br/><strong style={{color:'#111'}}>{email}</strong></p>
+                                    <p style={{ color: '#6B7280', fontSize: '15px', lineHeight: 1.5 }}>Please enter the code we sent to<br /><strong style={{ color: '#111' }}>{email}</strong></p>
                                 </div>
 
                                 <PremiumOTPInput length={6} value={otp} onChange={setOtp} />
@@ -435,7 +446,7 @@ export default function LoginPage() {
                                 }}>
                                     {loading ? <span className="btn-spinner"></span> : 'Verify Code'}
                                 </button>
-                                
+
                                 <button type="button" onClick={() => setView('login')} style={{ width: '100%', padding: '14px', marginTop: '12px', background: 'none', border: 'none', color: '#6B7280', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
                                     Back to Login
                                 </button>
@@ -445,7 +456,7 @@ export default function LoginPage() {
                     </AnimatePresence>
                 </GlassCard>
             </div>
-            
+
             {/* Inline CSS just for hiding the left side on small screens */}
             <style>{`
                 @media (max-width: 900px) {
