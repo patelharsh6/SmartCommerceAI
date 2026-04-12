@@ -5,7 +5,27 @@ import SignupPage from './pages/SignupPage'
 import ProfilePage from './pages/ProfilePage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
+<<<<<<< HEAD
 import './App.css'
+=======
+
+/* ═══════════════════════════════════════════════════════════════
+   SmartCommerceAI — Main Application
+   E-Commerce Dynamic Pricing & Recommendation System
+   ═══════════════════════════════════════════════════════════════ */
+
+import { Navigate } from 'react-router-dom';
+import { getImageForProduct } from './utils';
+import SearchBar from './components/SearchBar';
+import ProductCard from './components/ProductCard';
+
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}><div className="loading-spinner"></div></div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return children;
+};
+>>>>>>> c4ac3b45a720008ab48088b49b48f2cc161ba1d6
 
 function App() {
   return (
@@ -248,6 +268,8 @@ function HomePage() {
       return
     }
 
+    console.log('[handleAddToCart] product:', product, 'price:', price)
+
     setAddingToCart(product.product_id)
     try {
       await api.addToCart({
@@ -255,14 +277,19 @@ function HomePage() {
         name: product.name,
         image: product.image,
         price: price || product.base_price,
-        quantity: 1,
+        base_price: product.base_price,
         category: product.category,
+        subcategory: product.subcategory || product.sub_category,
+        brand: product.brand,
+        quantity: 1,
       })
       await refreshCart()
       setCartMessage(`${product.name} added to cart!`)
       setTimeout(() => setCartMessage(''), 2500)
     } catch (err) {
-      console.error('Add to cart failed:', err)
+      console.error('[handleAddToCart] Add to cart failed:', err)
+      setCartMessage('Failed to add to cart')
+      setTimeout(() => setCartMessage(''), 2500)
     } finally {
       setAddingToCart(null)
     }
@@ -380,13 +407,7 @@ function HomePage() {
 
       <div className="app-container">
         <div className="dashboard-layout">
-          {/* ─── SIDEBAR ─── */}
-          <Sidebar
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={handleCategoryClick}
-          />
-
+        
           {/* ─── MAIN CONTENT ─── */}
           <main className="dashboard-main">
             {/* ─── HERO ─── */}
@@ -446,7 +467,8 @@ function HomePage() {
             <div className="session-products">
               {session.products_viewed.map((pv, i) => (
                 <span key={i} className="session-product-tag">
-                  <span>{pv.image}</span> {pv.name}
+                  <img src={pv.image_url || pv.img_url} alt="" style={{ width: 18, height: 18, borderRadius: 4, objectFit: 'cover', verticalAlign: 'middle', marginRight: 4 }} onError={(e) => { e.target.style.display = 'none'; }} />
+                  {pv.name}
                 </span>
               ))}
             </div>
@@ -876,5 +898,9 @@ function HomePage() {
   )
 }
 
+<<<<<<< HEAD
 export default App
 >>>>>>> 94ba4386ebddc26dfc01dc51921f6a7408db2278
+=======
+export default App
+>>>>>>> c4ac3b45a720008ab48088b49b48f2cc161ba1d6

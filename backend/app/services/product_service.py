@@ -1,16 +1,9 @@
 from app.models.category_reco_model import ProductEngine
 
-# Initialize the engine once — may be None if model files are missing
-try:
-    engine = ProductEngine()
-except FileNotFoundError as e:
-    print(f"  [WARN] ProductEngine not loaded: {e}")
-    engine = None
+# Initialize the engine once
+engine = ProductEngine()
 
 def handle_prediction(sku_id):
-    if engine is None:
-        return {"error": "Prediction models not loaded. Run training pipeline first."}
-
     # 1. Preprocess
     features, raw_data = engine.preprocess_from_sku(sku_id)
     

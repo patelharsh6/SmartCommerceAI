@@ -121,7 +121,7 @@ export default function CheckoutPage() {
                                     <div className="success-order-label">Order ID</div>
                                     <div className="success-order-id">{orderPlaced.order_id}</div>
                                 </div>
-                                <div className="success-order-total">${orderPlaced.total.toFixed(2)}</div>
+                                <div className="success-order-total">₹{orderPlaced.total.toFixed(2)}</div>
                             </div>
 
                             <div className="success-details">
@@ -148,7 +148,7 @@ export default function CheckoutPage() {
                                     <div key={i} className="success-item">
                                         <span>{item.image}</span>
                                         <span>{item.name} × {item.quantity}</span>
-                                        <span>${(item.price * item.quantity).toFixed(2)}</span>
+                                        <span>₹{(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>
@@ -293,7 +293,7 @@ export default function CheckoutPage() {
                                             <div className="checkout-item-name">{item.name}</div>
                                             <div className="checkout-item-qty">Qty: {item.quantity}</div>
                                         </div>
-                                        <div className="checkout-item-price">${(item.price * item.quantity).toFixed(2)}</div>
+                                        <div className="checkout-item-price">₹{(item.price * item.quantity).toFixed(2)}</div>
                                     </div>
                                 ))}
                             </div>
@@ -305,7 +305,7 @@ export default function CheckoutPage() {
                             <h3 className="cart-summary-title">Order Total</h3>
                             <div className="cart-summary-row">
                                 <span>Subtotal</span>
-                                <span>${cart.total.toFixed(2)}</span>
+                                <span>₹{cart.total.toFixed(2)}</span>
                             </div>
                             <div className="cart-summary-row">
                                 <span>Shipping</span>
@@ -318,7 +318,7 @@ export default function CheckoutPage() {
                             <div className="cart-summary-divider"></div>
                             <div className="cart-summary-row cart-summary-total">
                                 <span>Total</span>
-                                <span>${cart.total.toFixed(2)}</span>
+                                <span>₹{cart.total.toFixed(2)}</span>
                             </div>
                             <button
                                 className="checkout-btn place-order-btn"
@@ -332,7 +332,7 @@ export default function CheckoutPage() {
                                         Placing Order...
                                     </>
                                 ) : (
-                                    <>Place Order — ${cart.total.toFixed(2)}</>
+                                    <>Place Order — ₹{cart.total.toFixed(2)}</>
                                 )}
                             </button>
                             <div className="cod-notice">
