@@ -14,7 +14,7 @@ from datetime import datetime
 
 from flask import Blueprint, request, jsonify
 
-from app.db import pricing_logs_collection
+import app.extensions as ext
 from app.data_store import (
     get_price_cache,
     set_price_cache,
@@ -133,7 +133,8 @@ def get_dynamic_price():
     set_price_cache(product_id, user_id, final_price, reason)
 
     try:
-        pricing_logs_collection.insert_one({
+        if ext.db is not None:
+            ext.db["pricing_logs"].insert_one({
             "session_id"   : session_id,
             "user_id"      : user_id,
             "product_id"   : product_id,

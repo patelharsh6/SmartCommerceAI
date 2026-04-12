@@ -1,5 +1,4 @@
 import os
-import redis
 import certifi
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -15,16 +14,29 @@ MONGO_URI = os.getenv(
     "mongodb+srv://SmartCommerce-AI:SmartCommerce-AI@signintrial.mv4lwkb.mongodb.net/"
 )
 
-client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
-db = client["smartcommerce"]
+try:
+    client = MongoClient(
+        MONGO_URI,
+        tlsCAFile=certifi.where(),
+        serverSelectionTimeoutMS=5000,
+        connectTimeoutMS=5000,
+    )
+    # Quick connectivity test (non-blocking — just validates the URI)
+    client.admin.command("ping")
+    db = client["smartcommerce"]
+    print("[DB] MongoDB connected successfully")
+except Exception as e:
+    print(f"[DB] ⚠️  MongoDB connection failed ({e}). Running in offline mode.")
+    client = None
+    db = None
 
-# ── Your existing collections ──────────────────
-users_collection  = db["users"]
-carts_collection  = db["carts"]
-orders_collection = db["orders"]
+# ── Your existing collections (safe even if db is None) ──────
+users_collection = db["users"] if db else None
+carts_collection = db["carts_collection"] if db else None
+orders_collection = db["orders"] if db else None
 
 # ── New collections for the ML pipeline ────────
-ab_experiments_collection = db["ab_experiments"]
+ab_experiments_collection = db["ab_experiments"] if db else None
 """
 Schema:
 {
@@ -39,7 +51,7 @@ Schema:
 }
 """
 
-pricing_logs_collection = db["pricing_logs"]
+pricing_logs_collection = db["pricing_logs"] if db else None
 """
 Schema — every price decision logged for fairness audit:
 {
@@ -55,39 +67,9 @@ Schema — every price decision logged for fairness audit:
 """
 
 # ─────────────────────────────────────────────
-# Redis (new — feature store + event stream)
+# Redis — re-export from the canonical module
 # ─────────────────────────────────────────────
-
-REDIS_HOST     = os.getenv("REDIS_HOST", "localhost")
-REDIS_PORT     = int(os.getenv("REDIS_PORT", 6379))
-REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", None)
-REDIS_DB       = int(os.getenv("REDIS_DB", 0))
-
-_redis_client: redis.Redis | None = None
-
-
-def get_redis() -> redis.Redis:
-    """
-    Returns a shared Redis client.
-    Lazy-initialised so import doesn't crash if Redis isn't running yet.
-    """
-    global _redis_client
-    if _redis_client is None:
-        _redis_client = redis.Redis(
-            host=REDIS_HOST,
-            port=REDIS_PORT,
-            password=REDIS_PASSWORD,
-            db=REDIS_DB,
-            decode_responses=True,   # always return str, not bytes
-            socket_connect_timeout=3,
-        )
-        try:
-            _redis_client.ping()
-            print("[DB] Redis connected successfully")
-        except redis.ConnectionError as e:
-            print(f"[DB] Redis connection failed: {e}")
-            raise
-    return _redis_client
+from app.redis_client import get_redis  # noqa: F401 (re-export for compat)
 
 
 # ─────────────────────────────────────────────
@@ -95,11 +77,17 @@ def get_redis() -> redis.Redis:
 # ─────────────────────────────────────────────
 
 def check_connections():
-    """Call this inside your FastAPI/Flask startup event."""
-    try:
-        client.admin.command("ping")
-        print("[DB] MongoDB connected successfully")
-    except Exception as e:
-        print(f"[DB] MongoDB ping failed: {e}")
+    """Call this inside your Flask startup event."""
+    if client is not None:
+        try:
+            client.admin.command("ping")
+            print("[DB] MongoDB connected successfully")
+        except Exception as e:
+            print(f"[DB] MongoDB ping failed: {e}")
+    else:
+        print("[DB] MongoDB client is None — skipping ping")
 
-    get_redis()   # will print its own status
+    try:
+        get_redis()  # will print its own status
+    except Exception as e:
+        print(f"[DB] Redis health check failed: {e}")

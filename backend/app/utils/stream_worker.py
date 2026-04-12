@@ -34,7 +34,7 @@ from app.data_store import (
     set_competitor_price_redis,
     PRODUCT_MAP,          # in-memory product catalog
 )
-from app.db import get_redis
+from app.redis_client import get_redis
 
 logger = logging.getLogger("stream_worker")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(message)s")
