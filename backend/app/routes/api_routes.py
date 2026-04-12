@@ -421,6 +421,7 @@ from collections import Counter
 import pandas as pd
 import traceback
 import os
+import app.extensions as ext 
 
 api_bp = Blueprint("api", __name__, url_prefix="/api")
 
@@ -658,6 +659,50 @@ def api_get_users():
     return jsonify({"users": list(DEMO_USERS.values())})
 
 
+@api_bp.route("/allusers", methods=["GET"])
+def api_get_all_users():
+    """
+    Fetches all registered users from MongoDB.
+    Checks both 'users' and 'user' collections for maximum compatibility.
+    """
+    try:
+        if ext.db is None:
+            return jsonify({"error": "Database not initialized", "users": []}), 500
+
+        # 1. Try plural 'users' first
+        users_cursor = ext.db["users"].find({}, {"password": 0})
+        users_list = []
+        
+        for u in users_cursor:
+            if "_id" in u:
+                u["_id"] = str(u["_id"])
+            users_list.append(u)
+
+        # 2. Fallback to singular 'user' if plural was empty
+        if not users_list:
+            users_cursor = ext.db["user"].find({}, {"password": 0})
+            for u in users_cursor:
+                if "_id" in u:
+                    u["_id"] = str(u["_id"])
+                users_list.append(u)
+
+        # 3. Log result for debugging
+        print(f"[API] Found {len(users_list)} users in database.")
+
+        return jsonify({
+            "status": "success",
+            "users": users_list, 
+            "total": len(users_list)
+        })
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({
+            "status": "error",
+            "error": str(e), 
+            "users": []
+        }), 500
+        
 # ═══════════════════════════════════════════════════════════════
 # SESSIONS   (GET /api/session/<user_id>)
 # ═══════════════════════════════════════════════════════════════

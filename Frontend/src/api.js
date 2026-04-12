@@ -344,6 +344,8 @@ export const getPrice = (productId, userId = null) => {
 export const getUsers = () => fetchJSON(`${API_BASE}/users`);
 export const getSession = (userId) => fetchJSON(`${API_BASE}/session/${userId}`);
 
+export const getAllUsers = () => fetchJSON(`${BACKEND_URL}/api/allusers`);
+
 // ─── Dashboard ───
 export const getDashboard = () => fetchJSON(`${API_BASE}/dashboard`);
 
