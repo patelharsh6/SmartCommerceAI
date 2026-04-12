@@ -1,4 +1,0 @@
-HTTPError 404 {
-  "message": "User not found"
-}
-
