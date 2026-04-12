@@ -18,6 +18,18 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/add-to-cart': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/cart': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/orders': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
 })

@@ -8,6 +8,21 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
     const [cartCount, setCartCount] = useState(0);
 
+    const getStoredCartCount = () => {
+        try {
+            const cart = JSON.parse(localStorage.getItem('smartcommerce_cart') || '{"items":[],"total":0,"item_count":0}');
+            if (typeof cart.item_count === 'number') {
+                return cart.item_count;
+            }
+            if (Array.isArray(cart.items)) {
+                return cart.items.reduce((sum, item) => sum + (item.quantity || 0), 0);
+            }
+            return 0;
+        } catch {
+            return 0;
+        }
+    };
+
     // Restore session on mount
     useEffect(() => {
         const token = localStorage.getItem('smartcommerce_token');
@@ -25,8 +40,10 @@ export function AuthProvider({ children }) {
                         // Token expired or invalid
                         logout();
                     });
-                // Cart not yet implemented on backend
-                setCartCount(0);
+                // Fetch real cart count from backend
+                api.getCart()
+                    .then(cartData => setCartCount(cartData.item_count || 0))
+                    .catch(() => setCartCount(0));
             } catch {
                 logout();
             }
@@ -39,7 +56,13 @@ export function AuthProvider({ children }) {
         localStorage.setItem('smartcommerce_token', data.token);
         localStorage.setItem('smartcommerce_user', JSON.stringify(data.user));
         setUser(data.user);
-        setCartCount(0);
+        // Fetch real cart count from backend
+        try {
+            const cartData = await api.getCart();
+            setCartCount(cartData.item_count || 0);
+        } catch {
+            setCartCount(0);
+        }
         return data;
     }, []);
 
@@ -70,8 +93,14 @@ export function AuthProvider({ children }) {
     }, []);
 
     // Cart not yet implemented on backend — placeholder for future use
-    const refreshCart = useCallback(() => {
-        setCartCount(0);
+    const refreshCart = useCallback(async () => {
+        try {
+            const cartData = await api.getCart();
+            setCartCount(cartData.item_count || 0);
+        } catch (err) {
+            console.error('Failed to refresh cart count:', err);
+            setCartCount(0);
+        }
     }, []);
 
     return (

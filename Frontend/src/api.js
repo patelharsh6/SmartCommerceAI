@@ -112,86 +112,177 @@ const _saveCart = (cart) => {
 
 const _recalc = (items) => ({
     items,
-    total: items.reduce((s, i) => s + i.price * i.quantity, 0),
-    item_count: items.reduce((s, i) => s + i.quantity, 0),
+    total: items.reduce((s, i) => s + (i.price || 0) * (i.quantity || 1), 0),
+    item_count: items.reduce((s, i) => s + (i.quantity || 1), 0),
 });
 
-export const getCart = async () => _readCart();
+export const getCart = async () => {
+    const user = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
+    const email = user?.email;
+    console.log('[getCart] email:', email);
+    if (!email) {
+        return { items: [], total: 0, item_count: 0 };
+    }
+
+    try {
+        const data = await fetchJSON(`${BACKEND_URL}/cart/${encodeURIComponent(email)}`);
+        console.log('[getCart] raw response:', data);
+        const rawItems = data.cart_items || [];
+        // Normalize: ensure each item has a flat `price` for CartItemCard
+        const items = rawItems.map(item => ({
+            ...item,
+            price: item.price || item.pricing?.best_price || item.pricing?.predicted_price || item.pricing?.base_price || 0,
+            img_url: item.img_url || item.image_url || item.image || null,
+        }));
+        const total = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+        const item_count = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        console.log('[getCart] normalized items:', items.length, 'total:', total);
+        return { items, total, item_count };
+    } catch (err) {
+        console.error('[getCart] Failed to load cart from backend:', err);
+        return { items: [], total: 0, item_count: 0 };
+    }
+};
 
 export const addToCart = async (product) => {
-    const cart = _readCart();
-    const existing = cart.items.find(i => i.product_id === product.product_id);
-    if (existing) {
-        existing.quantity += 1;
-    } else {
-        cart.items.push({ ...product, quantity: 1 });
+    const user = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
+    const email = user?.email;
+    console.log('[addToCart] email:', email, 'product:', product);
+    if (!email) {
+        throw new Error('User email required to save cart to backend');
     }
-    return _saveCart(_recalc(cart.items));
+
+    const payload = {
+        email,
+        product_id: product.product_id,
+        name: product.name,
+        category: product.category || product.cat || null,
+        sub_category: product.sub_category || product.subcategory || null,
+        brand: product.brand || null,
+        pricing: {
+            base_price: Number(product.price ?? product.base_price ?? 0),
+            predicted_price: Number(product.price ?? product.predicted_price ?? product.base_price ?? 0),
+            best_price: Number(product.price ?? product.best_price ?? product.base_price ?? 0),
+        },
+        quantity: product.quantity || 1,
+    };
+
+    console.log('[addToCart] Sending payload:', JSON.stringify(payload));
+
+    const result = await fetchJSON(`${BACKEND_URL}/add-to-cart`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+    });
+
+    console.log('[addToCart] Backend response:', result);
+
+    // Re-fetch the full cart from backend so UI stays in sync
+    return await getCart();
 };
 
 export const updateCartItem = async (productId, qty) => {
-    const cart = _readCart();
-    const item = cart.items.find(i => i.product_id === productId);
-    if (item) item.quantity = qty;
-    return _saveCart(_recalc(cart.items));
+    const user = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
+    const email = user?.email;
+    if (!email) {
+        throw new Error('User email required');
+    }
+
+    console.log(`[updateCartItem] email=${email}, productId=${productId}, qty=${qty}`);
+
+    await fetchJSON(`${BACKEND_URL}/cart/${encodeURIComponent(email)}/${productId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ quantity: qty }),
+    });
+
+    // Re-fetch normalized cart
+    return await getCart();
 };
 
 export const removeFromCart = async (productId) => {
-    const cart = _readCart();
-    const items = cart.items.filter(i => i.product_id !== productId);
-    return _saveCart(_recalc(items));
+    const user = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
+    const email = user?.email;
+    if (!email) {
+        throw new Error('User email required');
+    }
+
+    console.log(`[removeFromCart] email=${email}, productId=${productId}`);
+
+    await fetchJSON(`${BACKEND_URL}/cart/${encodeURIComponent(email)}/${productId}`, {
+        method: 'DELETE',
+    });
+
+    // Re-fetch normalized cart
+    return await getCart();
 };
 
-export const clearCart = () => {
-    return _saveCart({ items: [], total: 0, item_count: 0 });
+export const clearCart = async () => {
+    const user = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
+    const email = user?.email;
+    if (email) {
+        try {
+            await fetchJSON(`${BACKEND_URL}/cart/${encodeURIComponent(email)}`, {
+                method: 'DELETE',
+            });
+        } catch (err) {
+            console.error('[clearCart] Failed to clear cart on backend:', err);
+        }
+    }
+    return { items: [], total: 0, item_count: 0 };
 };
 
 // ─── Orders ───
-const ORDERS_KEY = 'smartcommerce_orders';
 
 export const getOrders = async () => {
+    const user = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
+    const email = user?.email;
+    console.log('[getOrders] email:', email);
+    if (!email) {
+        return { orders: [] };
+    }
+
     try {
-        const stored = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
-        return { orders: stored };
-    } catch {
+        const data = await fetchJSON(`${BACKEND_URL}/orders/${encodeURIComponent(email)}`);
+        console.log('[getOrders] response:', data);
+        return { orders: data.orders || [] };
+    } catch (err) {
+        console.error('[getOrders] Failed to load orders:', err);
         return { orders: [] };
     }
 };
 
 export const placeOrder = async (deliveryAddress, deliveryPhone) => {
-    const cart = _readCart();
-    if (cart.items.length === 0) throw new Error('Cart is empty');
-
     const user = JSON.parse(localStorage.getItem('smartcommerce_user') || '{}');
-    const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
-    const d = new Date();
-    d.setDate(d.getDate() + 5);
+    const email = user?.email;
+    console.log('[placeOrder] email:', email);
 
-    const order = {
-        order_id: orderId,
-        items: cart.items,
-        total: cart.total,
-        item_count: cart.item_count,
-        status: 'confirmed',
-        payment_method: 'Cash on Delivery',
-        delivery_address: deliveryAddress,
-        delivery_phone: deliveryPhone,
-        estimated_delivery: d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-        created_at: new Date().toISOString(),
-    };
+    if (!email) {
+        throw new Error('User email required to place order');
+    }
 
-    const orders = JSON.parse(localStorage.getItem(ORDERS_KEY) || '[]');
-    orders.unshift(order);
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    // Call backend to place order (backend fetches cart, creates order, clears cart)
+    const result = await fetchJSON(`${BACKEND_URL}/orders`, {
+        method: 'POST',
+        body: JSON.stringify({
+            email,
+            delivery_address: deliveryAddress,
+            delivery_phone: deliveryPhone,
+        }),
+    });
 
-    if (user) {
+    console.log('[placeOrder] Backend response:', result);
+
+    if (result.error) {
+        throw new Error(result.error);
+    }
+
+    // Update local user stats
+    if (user && result.order) {
         user.total_orders = (user.total_orders || 0) + 1;
-        user.total_spent = (user.total_spent || 0) + cart.total;
+        user.total_spent = (user.total_spent || 0) + (result.order.total || 0);
         localStorage.setItem('smartcommerce_user', JSON.stringify(user));
     }
 
-    clearCart();
-    return { order };
+    return { order: result.order };
 };
 
 // ─── Currency ───

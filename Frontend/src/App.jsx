@@ -265,6 +265,8 @@ function HomePage() {
       return
     }
 
+    console.log('[handleAddToCart] product:', product, 'price:', price)
+
     setAddingToCart(product.product_id)
     try {
       await api.addToCart({
@@ -272,14 +274,19 @@ function HomePage() {
         name: product.name,
         image: product.image,
         price: price || product.base_price,
-        quantity: 1,
+        base_price: product.base_price,
         category: product.category,
+        subcategory: product.subcategory || product.sub_category,
+        brand: product.brand,
+        quantity: 1,
       })
       await refreshCart()
       setCartMessage(`${product.name} added to cart!`)
       setTimeout(() => setCartMessage(''), 2500)
     } catch (err) {
-      console.error('Add to cart failed:', err)
+      console.error('[handleAddToCart] Add to cart failed:', err)
+      setCartMessage('Failed to add to cart')
+      setTimeout(() => setCartMessage(''), 2500)
     } finally {
       setAddingToCart(null)
     }

@@ -11,7 +11,7 @@ Redis section      : session features, user affinity, price
 import json
 import random
 from datetime import datetime, timedelta
-from app.db import get_redis
+from app.redis_client import get_redis
 
 # ═══════════════════════════════════════════════════════════════
 # 📦 PRODUCTS COLLECTION (your existing data — unchanged)
