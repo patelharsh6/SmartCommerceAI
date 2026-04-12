@@ -6,6 +6,8 @@
   display: flex;
   min-height: 100vh;
   background: var(--bg-primary);
+    margin-left: 7%;
+  margin-right: 7%;
 }
 
 /* ─── Left Side (Branding & Abstract) ─── */

@@ -5,6 +5,8 @@
 .app-container {
   max-width: 100%;
   margin: 0;
+  margin-left: 7%;
+  margin-right: 7%;
   padding: 0 16px;
 }
 
