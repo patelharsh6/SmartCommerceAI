@@ -1,4 +1,4 @@
-/**
+3/**
  * API Service Layer
  * Handles all communication between Frontend and Backend
  */
@@ -309,9 +309,16 @@ export const recordEvent = (userId, productId, eventType = 'view') => {
 };
 
 // ─── Recommendations ───
-export const getRecommendations = (productId, userId = null) => {
-    const params = userId ? `?user_id=${userId}` : '';
-    return fetchJSON(`${API_BASE}/recommendations/${productId}${params}`);
+export const getRecommendations = async (productId, userId = null) => {
+    try {
+        const encodedProductId = encodeURIComponent(productId);
+        const params = userId ? `?user_id=${encodeURIComponent(userId)}` : '';
+
+        return await fetchJSON(`${API_BASE}/recommendations/${encodedProductId}${params}`);
+    } catch (error) {
+        console.error("Error fetching recommendations:", error);
+        return null;
+    }
 };
 
 export const getTrending = (limit = 5) => {
