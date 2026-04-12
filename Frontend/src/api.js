@@ -8,6 +8,7 @@ import BACKEND_URL from './config';  // ← ADD THIS
 const API_BASE = `${BACKEND_URL}/api`;   // http://localhost:8000/api
 const AUTH_BASE = `${BACKEND_URL}/auth`; // http://localhost:8000/auth
 
+// ─── Core Fetch Helper ───
 async function fetchJSON(url, options = {}) {
     const token = localStorage.getItem('smartcommerce_token');
     try {
@@ -27,7 +28,8 @@ async function fetchJSON(url, options = {}) {
         console.error(`Fetch error for ${url}:`, error);
         throw error;
     }
-}
+    return await response.json()
+  }
 
 // ─── Auth ───
 export const login = async (email, password) => {
@@ -71,14 +73,14 @@ export const resetPassword = async (email, otp, newPassword) => {
 
 // ─── Profile ───
 export const getProfile = async () => {
-    try {
-        const userStr = localStorage.getItem('smartcommerce_user');
-        if (userStr) return { user: JSON.parse(userStr) };
-        return { user: null };
-    } catch {
-        return { user: null };
-    }
-};
+  try {
+    const userStr = localStorage.getItem('smartcommerce_user')
+    if (userStr) return { user: JSON.parse(userStr) }
+    return { user: null }
+  } catch {
+    return { user: null }
+  }
+}
 
 export const updateProfile = async (data) => {
     try {
@@ -101,14 +103,17 @@ export const updateProfile = async (data) => {
 const CART_KEY = 'smartcommerce_cart';
 
 const _readCart = () => {
-    try { return JSON.parse(localStorage.getItem(CART_KEY) || '{"items":[],"total":0,"item_count":0}'); }
-    catch { return { items: [], total: 0, item_count: 0 }; }
-};
+  try {
+    return JSON.parse(localStorage.getItem(CART_KEY) || '{"items":[],"total":0,"item_count":0}')
+  } catch {
+    return { items: [], total: 0, item_count: 0 }
+  }
+}
 
 const _saveCart = (cart) => {
-    localStorage.setItem(CART_KEY, JSON.stringify(cart));
-    return cart;
-};
+  localStorage.setItem(CART_KEY, JSON.stringify(cart))
+  return cart
+}
 
 const _recalc = (items) => ({
     items,
@@ -290,23 +295,23 @@ export const getExchangeRate = async () => {
     return { INR_TO_USD: 0.012 };
 };
 
-// ─── Product APIs ───
+// ─── Products ───
 export const getProducts = (category = null) => {
-    const params = category ? `?category=${encodeURIComponent(category)}` : '';
-    return fetchJSON(`${API_BASE}/products${params}`);
-};
+  const params = category ? `?category=${encodeURIComponent(category)}` : ''
+  return fetchJSON(`${API_BASE}/products${params}`)
+}
 
 export const getProduct = (productId) => {
-    return fetchJSON(`${API_BASE}/products/${productId}`);
-};
+  return fetchJSON(`${API_BASE}/products/${productId}`)
+}
 
-// ─── Event Tracking ───
+// ─── Events ───
 export const recordEvent = (userId, productId, eventType = 'view') => {
-    return fetchJSON(`${API_BASE}/events`, {
-        method: 'POST',
-        body: JSON.stringify({ user_id: userId, product_id: productId, event_type: eventType }),
-    });
-};
+  return fetchJSON(`${API_BASE}/events`, {
+    method: 'POST',
+    body: JSON.stringify({ user_id: userId, product_id: productId, event_type: eventType }),
+  })
+}
 
 // ─── Recommendations ───
 export const getRecommendations = async (productId, userId = null) => {
@@ -322,12 +327,12 @@ export const getRecommendations = async (productId, userId = null) => {
 };
 
 export const getTrending = (limit = 5) => {
-    return fetchJSON(`${API_BASE}/trending?limit=${limit}`);
-};
+  return fetchJSON(`${API_BASE}/trending?limit=${limit}`)
+}
 
 export const getBrandRecommendations = (query, limit = 10) => {
-    return fetchJSON(`${API_BASE}/brand-recommend/${encodeURIComponent(query)}?limit=${limit}`);
-};
+  return fetchJSON(`${API_BASE}/brand-recommend/${encodeURIComponent(query)}?limit=${limit}`)
+}
 
 // ─── Dynamic Pricing ───
 export const getPrice = (productId, userId = null) => {

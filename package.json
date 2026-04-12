@@ -1,5 +1,14 @@
+<<<<<<< HEAD
+{
+  "dependencies": {
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^1.8.0"
+  }
+}
+=======
 {
   "dependencies": {
     "lucide-react": "^1.8.0"
   }
 }
+>>>>>>> c4ac3b45a720008ab48088b49b48f2cc161ba1d6
